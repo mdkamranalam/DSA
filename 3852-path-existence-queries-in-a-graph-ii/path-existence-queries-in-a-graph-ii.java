@@ -1,55 +1,76 @@
 class Solution {
-    public int[] pathExistenceQueries(int n, int[] nums, int maxDiff, int[][] queries) {
-        int[][] pairs = new int[n][2];
-        for (int i = 0; i < n; i++) {
-            pairs[i][0] = nums[i];
-            pairs[i][1] = i;
-        }
-        Arrays.sort(pairs, (a, b) -> a[0] - b[0]);
 
-        int m = 20;
+    public int[] pathExistenceQueries(
+            int n,
+            int[] nums,
+            int maxDiff,
+            int[][] queries) {
+        int[] idx = new int[n];
+        int[] pos = new int[n];
+
+        for (int i = 0; i < n; i++) {
+            idx[i] = i;
+        }
+
+        Integer[] ord = new Integer[n];
+        for (int i = 0; i < n; i++) {
+            ord[i] = i;
+        }
+
+        Arrays.sort(ord, (a, b) -> Integer.compare(nums[a], nums[b]));
+
+        for (int i = 0; i < n; i++) {
+            idx[i] = ord[i];
+            pos[idx[i]] = i;
+        }
+
+        int m = 32 - Integer.numberOfLeadingZeros(n);
+
         int[][] f = new int[n][m];
-        int r = n - 1;
-        for (int l = n - 1; l >= 0; l--) {
-            while (pairs[r][0] - pairs[l][0] > maxDiff) {
-                r--;
+
+        int left = 0;
+        for (int i = 0; i < n; i++) {
+            while (left < i && nums[idx[i]] - nums[idx[left]] > maxDiff) {
+                left++;
             }
-            int i = pairs[l][1], j = pairs[r][1];
-            f[i][0] = j;
-            for (int k = 1; k < m; k++) {
-                f[i][k] = f[f[i][k - 1]][k - 1];
+            f[i][0] = left;
+        }
+
+        for (int j = 1; j < m; j++) {
+            for (int i = 0; i < n; i++) {
+                f[i][j] = f[f[i][j - 1]][j - 1];
             }
         }
 
         int[] ans = new int[queries.length];
-        for (int t = 0; t < queries.length; t++) {
-            int i = queries[t][0], j = queries[t][1];
-            if (nums[i] > nums[j]) {
-                int tmp = i;
-                i = j;
-                j = tmp;
+
+        for (int k = 0; k < queries.length; k++) {
+            int x = pos[queries[k][0]];
+            int y = pos[queries[k][1]];
+
+            if (x > y) {
+                int t = x;
+                x = y;
+                y = t;
             }
-            if (i == j) {
-                ans[t] = 0;
+
+            if (x == y) {
+                ans[k] = 0;
                 continue;
             }
-            if (nums[i] == nums[j]) {
-                ans[t] = 1;
-                continue;
-            }
-            int d = 0;
-            for (int k = m - 1; k >= 0; k--) {
-                if (nums[f[i][k]] < nums[j]) {
-                    d |= 1 << k;
-                    i = f[i][k];
+
+            int step = 0;
+
+            for (int i = m - 1; i >= 0; i--) {
+                if (f[y][i] > x) {
+                    y = f[y][i];
+                    step += 1 << i;
                 }
             }
-            if (nums[f[i][0]] < nums[j]) {
-                ans[t] = -1;
-            } else {
-                ans[t] = d + 1;
-            }
+
+            ans[k] = f[y][0] <= x ? step + 1 : -1;
         }
+
         return ans;
     }
 }
