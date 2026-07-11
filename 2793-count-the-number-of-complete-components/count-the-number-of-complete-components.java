@@ -1,41 +1,53 @@
 class Solution {
-    public int countCompleteComponents(int n, int[][] edges) {
-        List<Integer>[] adjList = new ArrayList[n];
+    int[] head, to, next;
+    int node = 0;
 
-        for (int vertex = 0; vertex < n; vertex++) {
-            adjList[vertex] = new ArrayList<>();
-        }
-
-        for (int i = 0; i < edges.length; i++) {
-            adjList[edges[i][0]].add(edges[i][1]);
-            adjList[edges[i][1]].add(edges[i][0]);
-        }
-
-        int counter = 0;
-        boolean[] visited = new boolean[n];
-        for (int i = 0; i < n; i++) {
-            if (visited[i] == true)
-                continue;
-            int[] componentInfo = new int[2];
-            dfs(adjList, visited, i, componentInfo);
-            if (componentInfo[0] * (componentInfo[0] - 1) == componentInfo[1])
-                counter++;
-
-        }
-        return counter;
-
-    }
-
-    public void dfs(List<Integer>[] adjList, boolean[] visited, int ind, int[] componentInfo) {
-        visited[ind] = true;
-        componentInfo[0]++;
-        componentInfo[1] += adjList[ind].size();
-
-        for (int i = 0; i < adjList[ind].size(); i++) {
-            int node = adjList[ind].get(i);
-            if (visited[node] == false) {
-                dfs(adjList, visited, node, componentInfo);
+    public int dfs(int u, boolean[] visited) {
+        int link = 0;
+        if (!visited[u]) {
+            node++;
+            visited[u] = true;
+            for (int i = head[u]; i != -1; i = next[i]) {
+                link += dfs(to[i], visited);
+                link++;
             }
         }
+        return link;
+    }
+
+    public boolean check(int link, int node) {
+        return (link == (node * (node - 1)));
+    }
+
+    public void addEdge(int u, int v, int ind) {
+        to[ind] = v;
+        next[ind] = head[u];
+        head[u] = ind;
+    }
+
+    public int countCompleteComponents(int n, int[][] edges) {
+        int m = edges.length;
+        this.head = new int[n];
+        Arrays.fill(head, -1);
+        this.to = new int[m * 2];
+        this.next = new int[m * 2];
+        int ind = 0;
+        for (int[] edge : edges) {
+            int u = edge[0];
+            int v = edge[1];
+            addEdge(u, v, ind++);
+            addEdge(v, u, ind++);
+        }
+        boolean[] visited = new boolean[n];
+        int count = 0;
+        for (int i = 0; i < n; i++) {
+            if (!visited[i]) {
+                this.node = 0;
+                int link = dfs(i, visited);
+                if (check(link, node))
+                    count++;
+            }
+        }
+        return count;
     }
 }
