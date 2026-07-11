@@ -1,52 +1,49 @@
 class Solution {
-    int[] parent, size;
+    public int countCompleteComponents(int n, int[][] edges) {
+        int[] parent = new int[n];
+        int[] nodeCount = new int[n];
+        int[] edgeCount = new int[n];
 
-    public int find(int i) {
+        for (int i = 0; i < n; i++) {
+            parent[i] = i;
+            nodeCount[i] = 1;
+        }
+
+        for (int[] edge : edges) {
+            int u = edge[0];
+            int v = edge[1];
+
+            int rootU = find(u, parent);
+            int rootV = find(v, parent);
+
+            if (rootU != rootV) {
+                parent[rootV] = rootU;
+                nodeCount[rootU] += nodeCount[rootV];
+                edgeCount[rootU] += edgeCount[rootV] + 1;
+            } else {
+                edgeCount[rootU]++;
+            }
+        }
+
+        int completeComponents = 0;
+
+        for (int i = 0; i < n; i++) {
+            if (parent[i] == i) {
+                int nodes = nodeCount[i];
+                int totalEdges = edgeCount[i];
+                if (totalEdges == (nodes * (nodes - 1)) / 2) {
+                    completeComponents++;
+                }
+            }
+        }
+
+        return completeComponents;
+    }
+
+    private int find(int i, int[] parent) {
         if (parent[i] == i) {
             return i;
         }
-        return parent[i] = find(parent[i]);
-    }
-
-    public void union(int i, int j) {
-        int parenti = find(i);
-        int parentj = find(j);
-        if (parenti != parentj) {
-            if (size[parenti] > size[parentj]) {
-                size[parenti] += size[parentj];
-                parent[parentj] = parenti;
-            } else {
-                size[parentj] += size[parenti];
-                parent[parenti] = parentj;
-            }
-        }
-    }
-
-    public int countCompleteComponents(int n, int[][] edges) {
-        parent = new int[n];
-        size = new int[n];
-        for (int i = 0; i < n; i++) {
-            parent[i] = i;
-            size[i] = 1;
-        }
-        for (int[] e : edges) {
-            int u = e[0], v = e[1];
-            union(u, v);
-        }
-        int[] edge = new int[n];
-        for (int e[] : edges) {
-            int u = find(e[0]);
-            edge[u]++;
-        }
-        int ans = 0;
-        for (int i = 0; i < n; i++) {
-            if (find(parent[i]) == i) {
-                int node = size[i];
-                int required = node * (node - 1) / 2;
-                if (required == edge[i])
-                    ans++;
-            }
-        }
-        return ans;
+        return parent[i] = find(parent[i], parent);
     }
 }
