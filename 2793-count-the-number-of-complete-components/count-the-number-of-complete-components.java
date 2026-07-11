@@ -1,53 +1,52 @@
 class Solution {
-    int[] head, to, next;
-    int node = 0;
+    int[] parent, size;
 
-    public int dfs(int u, boolean[] visited) {
-        int link = 0;
-        if (!visited[u]) {
-            node++;
-            visited[u] = true;
-            for (int i = head[u]; i != -1; i = next[i]) {
-                link += dfs(to[i], visited);
-                link++;
+    public int find(int i) {
+        if (parent[i] == i) {
+            return i;
+        }
+        return parent[i] = find(parent[i]);
+    }
+
+    public void union(int i, int j) {
+        int parenti = find(i);
+        int parentj = find(j);
+        if (parenti != parentj) {
+            if (size[parenti] > size[parentj]) {
+                size[parenti] += size[parentj];
+                parent[parentj] = parenti;
+            } else {
+                size[parentj] += size[parenti];
+                parent[parenti] = parentj;
             }
         }
-        return link;
-    }
-
-    public boolean check(int link, int node) {
-        return (link == (node * (node - 1)));
-    }
-
-    public void addEdge(int u, int v, int ind) {
-        to[ind] = v;
-        next[ind] = head[u];
-        head[u] = ind;
     }
 
     public int countCompleteComponents(int n, int[][] edges) {
-        int m = edges.length;
-        this.head = new int[n];
-        Arrays.fill(head, -1);
-        this.to = new int[m * 2];
-        this.next = new int[m * 2];
-        int ind = 0;
-        for (int[] edge : edges) {
-            int u = edge[0];
-            int v = edge[1];
-            addEdge(u, v, ind++);
-            addEdge(v, u, ind++);
-        }
-        boolean[] visited = new boolean[n];
-        int count = 0;
+        parent = new int[n];
+        size = new int[n];
         for (int i = 0; i < n; i++) {
-            if (!visited[i]) {
-                this.node = 0;
-                int link = dfs(i, visited);
-                if (check(link, node))
-                    count++;
+            parent[i] = i;
+            size[i] = 1;
+        }
+        for (int[] e : edges) {
+            int u = e[0], v = e[1];
+            union(u, v);
+        }
+        int[] edge = new int[n];
+        for (int e[] : edges) {
+            int u = find(e[0]);
+            edge[u]++;
+        }
+        int ans = 0;
+        for (int i = 0; i < n; i++) {
+            if (find(parent[i]) == i) {
+                int node = size[i];
+                int required = node * (node - 1) / 2;
+                if (required == edge[i])
+                    ans++;
             }
         }
-        return count;
+        return ans;
     }
 }
