@@ -1,32 +1,33 @@
 class Solution {
-    private int[] nums;
-    private Integer[][][] f;
-    private static final int MOD = 1_000_000_007;
-
     public int subsequencePairCount(int[] nums) {
-        this.nums = nums;
-        int n = nums.length;
+        final int MOD = 1_000_000_007;
         int m = 0;
         for (int x : nums) {
-            if (x > m)
-                m = x;
+            m = Math.max(m, x);
         }
-        this.f = new Integer[n + 1][m + 1][m + 1];
-        return (dfs(n, 0, 0) - 1 + MOD) % MOD;
-    }
-
-    private int dfs(int i, int j, int k) {
-        if (i == 0) {
-            return j == k ? 1 : 0;
+        int[][] f = new int[m + 1][m + 1];
+        f[0][0] = 1;
+        for (int x : nums) {
+            int[][] g = new int[m + 1][m + 1];
+            for (int j = 0; j <= m; ++j) {
+                for (int k = 0; k <= m; ++k) {
+                    if (f[j][k] == 0) {
+                        continue;
+                    }
+                    int v = f[j][k];
+                    g[j][k] = (g[j][k] + v) % MOD;
+                    int gj = gcd(j, x), gk = gcd(k, x);
+                    g[gj][k] = (g[gj][k] + v) % MOD;
+                    g[j][gk] = (g[j][gk] + v) % MOD;
+                }
+            }
+            f = g;
         }
-        if (f[i][j][k] != null) {
-            return f[i][j][k];
+        long ans = 0;
+        for (int i = 0; i <= m; ++i) {
+            ans += f[i][i];
         }
-        int x = nums[i - 1];
-        int res = ((dfs(i - 1, j, k) + dfs(i - 1, gcd(x, j), k)) % MOD + dfs(i - 1, j, gcd(x, k)))
-                % MOD;
-        f[i][j][k] = res;
-        return res;
+        return (int) ((ans - 1 + MOD) % MOD);
     }
 
     private int gcd(int a, int b) {
