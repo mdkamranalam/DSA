@@ -16,9 +16,10 @@ class Solution {
                     }
                     int v = f[j][k];
                     g[j][k] = (g[j][k] + v) % MOD;
-                    int gj = gcd(j, x), gk = gcd(k, x);
-                    g[gj][k] = (g[gj][k] + v) % MOD;
-                    g[j][gk] = (g[j][gk] + v) % MOD;
+                    int nj = gcd(x, j);
+                    g[nj][k] = (g[nj][k] + v) % MOD;
+                    int nk = gcd(x, k);
+                    g[j][nk] = (g[j][nk] + v) % MOD;
                 }
             }
             f = g;
