@@ -1,27 +1,22 @@
 class Solution {
-    public String smallestSubsequence(String s) {
-        int n = s.length();
-        int[] last = new int[26];
-        for (int i = 0; i < n; ++i) {
-            last[s.charAt(i) - 'a'] = i;
+    public String smallestSubsequence(String text) {
+        int[] cnt = new int[26];
+        for (char c : text.toCharArray()) {
+            ++cnt[c - 'a'];
         }
-        Deque<Character> stk = new ArrayDeque<>();
-        int mask = 0;
-        for (int i = 0; i < n; ++i) {
-            char c = s.charAt(i);
-            if (((mask >> (c - 'a')) & 1) == 1) {
-                continue;
+        boolean[] vis = new boolean[26];
+        char[] cs = new char[text.length()];
+        int top = -1;
+        for (char c : text.toCharArray()) {
+            --cnt[c - 'a'];
+            if (!vis[c - 'a']) {
+                while (top >= 0 && c < cs[top] && cnt[cs[top] - 'a'] > 0) {
+                    vis[cs[top--] - 'a'] = false;
+                }
+                cs[++top] = c;
+                vis[c - 'a'] = true;
             }
-            while (!stk.isEmpty() && stk.peek() > c && last[stk.peek() - 'a'] > i) {
-                mask ^= 1 << (stk.pop() - 'a');
-            }
-            stk.push(c);
-            mask |= 1 << (c - 'a');
         }
-        StringBuilder ans = new StringBuilder();
-        for (char c : stk) {
-            ans.append(c);
-        }
-        return ans.reverse().toString();
+        return String.valueOf(cs, 0, top + 1);
     }
 }
