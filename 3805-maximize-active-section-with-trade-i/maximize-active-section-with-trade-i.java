@@ -1,25 +1,35 @@
-class Solution {
-    public int maxActiveSectionsAfterTrade(String s) {
-        int n = s.length();
-        int ans = 0, i = 0;
-        int pre = Integer.MIN_VALUE, mx = 0;
 
-        while (i < n) {
-            int j = i + 1;
-            while (j < n && s.charAt(j) == s.charAt(i)) {
-                j++;
+public class Solution {
+
+    public int maxActiveSectionsAfterTrade(String input) {
+        int totalNumberOfOnes = 0;
+        int numberOfZerosBeforeOnes = 0;
+        int maxNumberOfZerosToTransform = 0;
+
+        for (int i = 0; i < input.length(); ++i) {
+
+            int numberOfOnesBetweenZeros = 0;
+            while (i < input.length() && input.charAt(i) == '1') {
+                ++i;
+                ++totalNumberOfOnes;
+                ++numberOfOnesBetweenZeros;
             }
-            int cur = j - i;
-            if (s.charAt(i) == '1') {
-                ans += cur;
-            } else {
-                mx = Math.max(mx, pre + cur);
-                pre = cur;
+
+            int numberOfZerosAfterOnes = 0;
+            while (i < input.length() && input.charAt(i) == '0') {
+                ++i;
+                ++numberOfZerosAfterOnes;
             }
-            i = j;
+
+            if (numberOfZerosBeforeOnes > 0 && numberOfOnesBetweenZeros > 0 && numberOfZerosAfterOnes > 0) {
+                maxNumberOfZerosToTransform = Math.max(maxNumberOfZerosToTransform,
+                        numberOfZerosBeforeOnes + numberOfZerosAfterOnes);
+            }
+
+            --i;
+            numberOfZerosBeforeOnes = numberOfZerosAfterOnes;
         }
 
-        ans += mx;
-        return ans;
+        return totalNumberOfOnes + maxNumberOfZerosToTransform;
     }
 }
