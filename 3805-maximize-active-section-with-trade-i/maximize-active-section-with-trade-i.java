@@ -1,35 +1,23 @@
+class Solution {
+    public int maxActiveSectionsAfterTrade(String s) {
+        int oneCount = 0;
+        int maxMergedzeros = 0;
+        int currZeroCount = 0;
+        int lastZeroCount = 0;
 
-public class Solution {
-
-    public int maxActiveSectionsAfterTrade(String input) {
-        int totalNumberOfOnes = 0;
-        int numberOfZerosBeforeOnes = 0;
-        int maxNumberOfZerosToTransform = 0;
-
-        for (int i = 0; i < input.length(); ++i) {
-
-            int numberOfOnesBetweenZeros = 0;
-            while (i < input.length() && input.charAt(i) == '1') {
-                ++i;
-                ++totalNumberOfOnes;
-                ++numberOfOnesBetweenZeros;
+        for (char c : s.toCharArray()) {
+            if (c == '0')
+                currZeroCount++;
+            else {
+                if (currZeroCount != 0)
+                    lastZeroCount = currZeroCount;
+                currZeroCount = 0;
+                oneCount++;
             }
-
-            int numberOfZerosAfterOnes = 0;
-            while (i < input.length() && input.charAt(i) == '0') {
-                ++i;
-                ++numberOfZerosAfterOnes;
-            }
-
-            if (numberOfZerosBeforeOnes > 0 && numberOfOnesBetweenZeros > 0 && numberOfZerosAfterOnes > 0) {
-                maxNumberOfZerosToTransform = Math.max(maxNumberOfZerosToTransform,
-                        numberOfZerosBeforeOnes + numberOfZerosAfterOnes);
-            }
-
-            --i;
-            numberOfZerosBeforeOnes = numberOfZerosAfterOnes;
+            maxMergedzeros = Math.max(maxMergedzeros, currZeroCount + lastZeroCount);
         }
-
-        return totalNumberOfOnes + maxNumberOfZerosToTransform;
+        if (maxMergedzeros == currZeroCount || maxMergedzeros == lastZeroCount)
+            return oneCount;
+        return oneCount + maxMergedzeros;
     }
 }
