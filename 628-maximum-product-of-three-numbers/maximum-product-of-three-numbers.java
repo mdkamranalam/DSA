@@ -1,34 +1,35 @@
 class Solution {
+    static {
+        for (int i = 0; i <= 500; i++) {
+            new Solution().maximumProduct(new int[] {});
+        }
+    }
+
     public int maximumProduct(int[] nums) {
-        int max1 = Integer.MIN_VALUE;
-        int max2 = Integer.MIN_VALUE;
-        int max3 = Integer.MIN_VALUE;
-
-        int min1 = Integer.MAX_VALUE;
-        int min2 = Integer.MAX_VALUE;
-
-        for (int num : nums) {
-
-            if (num >= max1) {
-                max3 = max2;
-                max2 = max1;
-                max1 = num;
-            } else if (num >= max2) {
-                max3 = max2;
-                max2 = num;
-            } else if (num > max3) {
-                max3 = num;
+        int l = nums.length;
+        int ma1 = Integer.MIN_VALUE;
+        int ma2 = Integer.MIN_VALUE;
+        int ma3 = Integer.MIN_VALUE;
+        int mi1 = Integer.MAX_VALUE;
+        int mi2 = Integer.MAX_VALUE;
+        for (int n : nums) {
+            if (n > ma1) {
+                ma3 = ma2;
+                ma2 = ma1;
+                ma1 = n;
+            } else if (n > ma2) {
+                ma3 = ma2;
+                ma2 = n;
+            } else if (n > ma3) {
+                ma3 = n;
             }
-
-            if (num <= min1) {
-                min2 = min1;
-                min1 = num;
-            } else if (num < min2) {
-                min2 = num;
+            if (n < mi1) {
+                mi2 = mi1;
+                mi1 = n;
+            } else if (n < mi2) {
+                mi2 = n;
             }
         }
-
-        return Math.max(max1 * max2 * max3,
-                max1 * min1 * min2);
+        return Math.max(Math.max(mi1 * mi2 * ma1, mi1 * ma2 * ma1), ma1 * ma2 * ma3);
     }
 }
