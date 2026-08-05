@@ -1,53 +1,43 @@
-import java.util.*;
-
 class Solution {
     public List<Integer> remainingMethods(int n, int k, int[][] invocations) {
-        List<List<Integer>> graph = new ArrayList<>();
+        List<Integer>[] g = new ArrayList[n];
+        Arrays.setAll(g, i -> new ArrayList<>());
 
-        for (int i = 0; i < n; i++) {
-            graph.add(new ArrayList<>());
+        for (int[] e : invocations) {
+            g[e[0]].add(e[1]);
         }
 
-        for (int[] edge : invocations) {
-            graph.get(edge[0]).add(edge[1]);
-        }
+        boolean[] isSuspicous = new boolean[n];
 
-        boolean[] suspicious = new boolean[n];
-        dfs(k, graph, suspicious);
+        dfs(k, g, isSuspicous);
 
-        for (int[] edge : invocations) {
-            int from = edge[0];
-            int to = edge[1];
-
-            if (!suspicious[from] && suspicious[to]) {
-                List<Integer> ans = new ArrayList<>();
+        for (int[] e : invocations) {
+            if (!isSuspicous[e[0]] && isSuspicous[e[1]]) {
+                List<Integer> ans = new ArrayList<>(n);
                 for (int i = 0; i < n; i++) {
                     ans.add(i);
                 }
+
                 return ans;
             }
         }
 
         List<Integer> ans = new ArrayList<>();
-
         for (int i = 0; i < n; i++) {
-            if (!suspicious[i]) {
+            if (!isSuspicous[i]) {
                 ans.add(i);
             }
         }
-
         return ans;
     }
 
-    private void dfs(int node, List<List<Integer>> graph, boolean[] suspicious) {
+    private void dfs(int i, List<Integer>[] g, boolean[] isSuspicous) {
+        isSuspicous[i] = true;
 
-        if (suspicious[node])
-            return;
-
-        suspicious[node] = true;
-
-        for (int next : graph.get(node)) {
-            dfs(next, graph, suspicious);
+        for (int y : g[i]) {
+            if (!isSuspicous[y]) {
+                dfs(y, g, isSuspicous);
+            }
         }
     }
 }
