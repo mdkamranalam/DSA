@@ -1,53 +1,53 @@
-class Solution {
-    private boolean[] suspicious;
-    private boolean[] vis;
-    private List<Integer>[] f;
-    private List<Integer>[] g;
+import java.util.*;
 
+class Solution {
     public List<Integer> remainingMethods(int n, int k, int[][] invocations) {
-        suspicious = new boolean[n];
-        vis = new boolean[n];
-        f = new List[n];
-        g = new List[n];
-        Arrays.setAll(f, i -> new ArrayList<>());
-        Arrays.setAll(g, i -> new ArrayList<>());
-        for (var e : invocations) {
-            int a = e[0], b = e[1];
-            f[a].add(b);
-            f[b].add(a);
-            g[a].add(b);
+        List<List<Integer>> graph = new ArrayList<>();
+
+        for (int i = 0; i < n; i++) {
+            graph.add(new ArrayList<>());
         }
-        dfs(k);
-        for (int i = 0; i < n; ++i) {
-            if (!suspicious[i] && !vis[i]) {
-                dfs2(i);
+
+        for (int[] edge : invocations) {
+            graph.get(edge[0]).add(edge[1]);
+        }
+
+        boolean[] suspicious = new boolean[n];
+        dfs(k, graph, suspicious);
+
+        for (int[] edge : invocations) {
+            int from = edge[0];
+            int to = edge[1];
+
+            if (!suspicious[from] && suspicious[to]) {
+                List<Integer> ans = new ArrayList<>();
+                for (int i = 0; i < n; i++) {
+                    ans.add(i);
+                }
+                return ans;
             }
         }
+
         List<Integer> ans = new ArrayList<>();
-        for (int i = 0; i < n; ++i) {
+
+        for (int i = 0; i < n; i++) {
             if (!suspicious[i]) {
                 ans.add(i);
             }
         }
+
         return ans;
     }
 
-    private void dfs(int i) {
-        suspicious[i] = true;
-        for (int j : g[i]) {
-            if (!suspicious[j]) {
-                dfs(j);
-            }
-        }
-    }
+    private void dfs(int node, List<List<Integer>> graph, boolean[] suspicious) {
 
-    private void dfs2(int i) {
-        vis[i] = true;
-        for (int j : f[i]) {
-            if (!vis[j]) {
-                suspicious[j] = false;
-                dfs2(j);
-            }
+        if (suspicious[node])
+            return;
+
+        suspicious[node] = true;
+
+        for (int next : graph.get(node)) {
+            dfs(next, graph, suspicious);
         }
     }
 }
