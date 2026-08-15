@@ -1,15 +1,21 @@
 class Solution {
     public int longestSubsequence(int[] nums) {
-        int xor = 0, countZero = 0;
-        int n = nums.length;
-        for (int i : nums) {
-            xor ^= i;
-            countZero += i == 0 ? 1 : 0;
-        }
-        if (xor != 0) {
-            return n;
+        int xor = 0;
+        int countZero = 0;
+
+        for (int num : nums) {
+            xor ^= num;
+            if (num == 0) {
+                countZero++;
+            }
         }
 
-        return countZero == n ? 0 : n - 1;
+        if (xor != 0)
+            return nums.length;
+        else {
+            if (countZero == nums.length)
+                return 0;
+        }
+        return nums.length - 1;
     }
 }
