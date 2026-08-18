@@ -1,33 +1,33 @@
 class Solution {
-    private int[] nums;
 
     public int largestInteger(int[] nums, int k) {
-        this.nums = nums;
-        if (k == 1) {
-            Map<Integer, Integer> cnt = new HashMap<>();
+        int n = nums.length;
+        if (n == k) {
+            int res = nums[0];
             for (int x : nums) {
-                cnt.merge(x, 1, Integer::sum);
+                res = Math.max(res, x);
             }
-            int ans = -1;
-            for (var e : cnt.entrySet()) {
-                if (e.getValue() == 1) {
-                    ans = Math.max(ans, e.getKey());
+            return res;
+        }
+        int[] count = new int[51];
+        for (int x : nums) {
+            count[x]++;
+        }
+        if (k == 1) {
+            for (int i = 50; i >= 0; --i) {
+                if (count[i] == 1) {
+                    return i;
                 }
             }
-            return ans;
+            return -1;
         }
-        if (k == nums.length) {
-            return Arrays.stream(nums).max().getAsInt();
+        int res = -1;
+        if (count[nums[0]] == 1) {
+            res = Math.max(res, nums[0]);
         }
-        return Math.max(f(0), f(nums.length - 1));
-    }
-
-    private int f(int k) {
-        for (int i = 0; i < nums.length; ++i) {
-            if (i != k && nums[i] == nums[k]) {
-                return -1;
-            }
+        if (count[nums[n - 1]] == 1) {
+            res = Math.max(res, nums[n - 1]);
         }
-        return nums[k];
+        return res;
     }
 }
