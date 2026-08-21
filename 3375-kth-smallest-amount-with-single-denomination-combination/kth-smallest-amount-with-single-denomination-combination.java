@@ -1,52 +1,66 @@
 class Solution {
     public long findKthSmallest(int[] coins, int k) {
-        List<Long>[] sizeToLcms = getSizeToLcms(coins);
-        long l = 0;
-        long r = (long) k * Arrays.stream(coins).min().getAsInt();
+        Arrays.sort(coins);
+        int n = coins.length;
+        int m = 1 << n;
 
-        while (l < r) {
-            final long m = (l + r) / 2;
-            if (numDenominationsNoGreaterThan(sizeToLcms, m) >= k)
-                r = m;
-            else
-                l = m + 1;
+        long l = k;
+        long r = (long) coins[0] * k + 1;
+
+        int[] bitCount = new int[m];
+        long[] lcm = new long[m];
+
+        for (int mask = 1; mask < m; mask++) {
+            long curLcm = 1;
+            for (int i = 0; i < n; i++) {
+                if (((mask >> i) & 1) == 1) {
+                    long g = gcd(curLcm, coins[i]);
+                    long tmp = curLcm / g;
+
+                    if (tmp <= r / coins[i]) {
+                        curLcm = tmp * coins[i];
+                    } else {
+                        curLcm = r + 1;
+                        break;
+                    }
+                    bitCount[mask]++;
+                }
+            }
+            lcm[mask] = curLcm;
         }
 
+        while (l < r) {
+            long x = l + (r - l) / 2;
+            if (count(x, m, lcm, bitCount) >= k) {
+                r = x;
+            } else {
+                l = x + 1;
+            }
+        }
         return l;
     }
 
-    private long numDenominationsNoGreaterThan(List<Long>[] sizeToLcms, long m) {
+    private long count(long x, int m, long[] lcm, int[] bitCount) {
         long res = 0;
-        for (int sz = 1; sz < sizeToLcms.length; ++sz)
-            for (long lcm : sizeToLcms[sz])
-                res += m / lcm * Math.pow(-1, sz + 1);
+        for (int mask = 1; mask < m; mask++) {
+            if (lcm[mask] > x)
+                continue;
+
+            if ((bitCount[mask] & 1) == 1) {
+                res += x / lcm[mask];
+            } else {
+                res -= x / lcm[mask];
+            }
+        }
         return res;
     }
 
-    private List<Long>[] getSizeToLcms(int[] coins) {
-        final int n = coins.length;
-        final int maxMask = 1 << n;
-        List<Long>[] sizeToLcms = new List[n + 1];
-
-        for (int i = 1; i <= n; ++i)
-            sizeToLcms[i] = new ArrayList<>();
-
-        for (int mask = 1; mask < maxMask; ++mask) {
-            long lcmOfSelectedCoins = 1;
-            for (int i = 0; i < n; ++i)
-                if ((mask >> i & 1) == 1)
-                    lcmOfSelectedCoins = lcm(lcmOfSelectedCoins, coins[i]);
-            sizeToLcms[Integer.bitCount(mask)].add(lcmOfSelectedCoins);
-        }
-
-        return sizeToLcms;
-    }
-
-    private long lcm(long a, long b) {
-        return a * b / gcd(a, b);
-    }
-
     private long gcd(long a, long b) {
-        return b == 0 ? a : gcd(b, a % b);
+        while (b != 0) {
+            long t = b;
+            b = a % b;
+            a = t;
+        }
+        return a;
     }
 }
