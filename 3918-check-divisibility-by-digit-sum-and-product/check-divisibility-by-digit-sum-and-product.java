@@ -1,14 +1,20 @@
 class Solution {
     public boolean checkDivisibility(int n) {
         int sum = 0;
-        int prod = 1;
-        int x = n;
-        while (x != 0) {
-            int v = x % 10;
-            x /= 10;
-            sum += v;
-            prod *= v;
+        int pro = 1;
+        int original = n;
+        while (n != 0) {
+            int last = n % 10;
+            sum += last;
+            pro *= last;
+            n /= 10;
         }
-        return n % (sum + prod) == 0;
+
+        int result = sum + pro;
+        if (original % result == 0) {
+            return true;
+        }
+
+        return false;
     }
 }
