@@ -1,22 +1,27 @@
 class Solution {
     public boolean sumGame(String num) {
         int n = num.length();
-        int cnt1 = 0, cnt2 = 0;
-        int s1 = 0, s2 = 0;
-        for (int i = 0; i < n / 2; ++i) {
-            if (num.charAt(i) == '?') {
-                cnt1++;
+        int[] left = get(num.substring(0, n / 2));
+        int[] right = get(num.substring(n / 2, n));
+
+        int n0 = left[0],
+                q0 = left[1];
+        int n1 = right[0],
+                q1 = right[1];
+
+        return (q0 + q1) % 2 == 1 || n0 - n1 != ((q1 - q0) * 9) / 2;
+    }
+
+    private int[] get(String s) {
+        int nn = 0,
+                qq = 0;
+        for (char ch : s.toCharArray()) {
+            if (ch == '?') {
+                qq++;
             } else {
-                s1 += num.charAt(i) - '0';
+                nn += ch - '0';
             }
         }
-        for (int i = n / 2; i < n; ++i) {
-            if (num.charAt(i) == '?') {
-                cnt2++;
-            } else {
-                s2 += num.charAt(i) - '0';
-            }
-        }
-        return (cnt1 + cnt2) % 2 == 1 || s1 - s2 != 9 * (cnt2 - cnt1) / 2;
+        return new int[] { nn, qq };
     }
 }
