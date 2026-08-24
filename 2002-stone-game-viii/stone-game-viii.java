@@ -6,7 +6,7 @@ class Solution {
     public int stoneGameVIII(int[] stones) {
         n = stones.length;
         f = new Integer[n];
-        for (int i = 1; i < n; i++) {
+        for (int i = 1; i < n; ++i) {
             stones[i] += stones[i - 1];
         }
         s = stones;
