@@ -11,15 +11,13 @@
 class Solution {
     public ListNode deleteDuplicates(ListNode head) {
         if (head == null) return null;
-        
-        Set<Integer> values = new HashSet<>();
-        ListNode prev = null;
-        ListNode curr = head;
+
+        ListNode prev = head;
+        ListNode curr = prev.next;
         while (curr != null) {
-            if (values.contains(curr.val)) {
+            if (prev.val == curr.val) {
                 prev.next = curr.next;
             } else {
-                values.add(curr.val);
                 prev = curr;
             }
             curr = curr.next;
