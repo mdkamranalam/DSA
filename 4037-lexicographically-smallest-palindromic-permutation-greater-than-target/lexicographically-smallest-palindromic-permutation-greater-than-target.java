@@ -1,102 +1,145 @@
-import java.util.Arrays;
-
 class Solution {
-    public String lexPalindromicPermutation(String s, String target) {
+    public String lexPalindromicPermutation(
+            String s, String target) {
+
         int n = s.length();
-        int halfLen = n / 2;
-        int[] counts = new int[26];
-        for (int i = 0; i < n; i++) {
-            counts[s.charAt(i) - 'a']++;
+
+        int[] freq = new int[26];
+
+        for (char ch : s.toCharArray()) {
+            freq[ch - 'a']++;
         }
 
-        // Step 1: Validate feasibility & identify middle character
-        int oddCount = 0;
-        char midChar = '\0';
+        // A palindrome can have at most one odd frequency
+        int odd = 0;
+        int middle = -1;
+
         for (int i = 0; i < 26; i++) {
-            if (counts[i] % 2 != 0) {
-                oddCount++;
-                midChar = (char) ('a' + i);
+            if (freq[i] % 2 == 1) {
+                odd++;
+                middle = i;
             }
         }
 
-        if (oddCount > 1 || (n % 2 == 0 && oddCount > 0)) {
+        if (odd > 1) {
             return "";
         }
 
-        int[] halfCounts = new int[26];
+        int halfLen = n / 2;
+
+        // Number of each character available in the first half
+        int[] half = new int[26];
+
         for (int i = 0; i < 26; i++) {
-            halfCounts[i] = counts[i] / 2;
+            half[i] = freq[i] / 2;
         }
 
-        String tHalf = target.substring(0, halfLen);
+        /*
+         * First check whether target's first half
+         * can itself be used as the palindrome's first half.
+         */
+        int[] remaining = half.clone();
+        boolean possible = true;
 
-        // Step 2: Option A - Try exact match for first half (half_str == t_half)
-        int[] tHalfCounts = new int[26];
         for (int i = 0; i < halfLen; i++) {
-            tHalfCounts[tHalf.charAt(i) - 'a']++;
+            int c = target.charAt(i) - 'a';
+
+            if (remaining[c] == 0) {
+                possible = false;
+                break;
+            }
+
+            remaining[c]--;
         }
 
-        if (Arrays.equals(tHalfCounts, halfCounts)) {
-            String midStr = (midChar != '\0') ? String.valueOf(midChar) : "";
-            String candidate = tHalf + midStr + new StringBuilder(tHalf).reverse().toString();
+        if (possible) {
+            String firstHalf = target.substring(0, halfLen);
+
+            String candidate = makePalindrome(firstHalf, middle);
+
             if (candidate.compareTo(target) > 0) {
                 return candidate;
             }
         }
 
-        // Step 3: Option B - Find largest matching prefix length k (half_str > t_half)
-        int[] currentPrefix = new int[26];
-        boolean[] validPrefix = new boolean[halfLen + 1];
-        validPrefix[0] = true;
+        /*
+         * Find the smallest first half greater than
+         * target's first half.
+         *
+         * Try changing the rightmost possible position first.
+         */
+        for (int i = halfLen - 1; i >= 0; i--) {
 
-        for (int i = 0; i < halfLen; i++) {
-            int charIdx = tHalf.charAt(i) - 'a';
-            currentPrefix[charIdx]++;
-            if (currentPrefix[charIdx] > halfCounts[charIdx]) {
-                break;
+            remaining = half.clone();
+            boolean ok = true;
+
+            // Match target[0 ... i-1]
+            for (int j = 0; j < i; j++) {
+
+                int c = target.charAt(j) - 'a';
+
+                if (remaining[c] == 0) {
+                    ok = false;
+                    break;
+                }
+
+                remaining[c]--;
             }
-            validPrefix[i + 1] = true;
-        }
 
-        for (int k = halfLen - 1; k >= 0; k--) {
-            if (!validPrefix[k]) {
+            if (!ok) {
                 continue;
             }
 
-            int[] remCounts = halfCounts.clone();
-            for (int i = 0; i < k; i++) {
-                remCounts[tHalf.charAt(i) - 'a']--;
-            }
+            // At position i, choose the smallest
+            // character strictly greater than target[i]
+            int targetChar = target.charAt(i) - 'a';
 
-            int targetChar = tHalf.charAt(k) - 'a';
-            int bestChar = -1;
             for (int c = targetChar + 1; c < 26; c++) {
-                if (remCounts[c] > 0) {
-                    bestChar = c;
-                    break;
-                }
-            }
 
-            if (bestChar != -1) {
-                remCounts[bestChar]--;
-                StringBuilder halfSb = new StringBuilder();
-                halfSb.append(tHalf, 0, k);
-                halfSb.append((char) ('a' + bestChar));
+                if (remaining[c] > 0) {
 
-                for (int c = 0; c < 26; c++) {
-                    for (int count = 0; count < remCounts[c]; count++) {
-                        halfSb.append((char) ('a' + c));
+                    remaining[c]--;
+
+                    StringBuilder firstHalf = new StringBuilder();
+
+                    // Prefix equal to target
+                    firstHalf.append(target, 0, i);
+
+                    // Bigger character
+                    firstHalf.append((char) ('a' + c));
+
+                    // Fill remaining positions with smallest chars
+                    for (int k = 0; k < 26; k++) {
+                        while (remaining[k] > 0) {
+                            firstHalf.append((char) ('a' + k));
+                            remaining[k]--;
+                        }
                     }
+
+                    return makePalindrome(firstHalf.toString(), middle);
                 }
-
-                String halfStr = halfSb.toString();
-                String midStr = (midChar != '\0') ? String.valueOf(midChar) : "";
-                String revHalf = new StringBuilder(halfStr).reverse().toString();
-
-                return halfStr + midStr + revHalf;
             }
         }
 
         return "";
+    }
+
+    private String makePalindrome(String firstHalf, int middle) {
+
+        StringBuilder ans = new StringBuilder();
+
+        ans.append(firstHalf);
+
+        // Middle character for odd length
+        if (middle != -1) {
+            ans.append((char) ('a' + middle));
+        }
+
+        // Reverse first half
+        for (int i = firstHalf.length() - 1; i >= 0; i--) {
+            ans.append(firstHalf.charAt(i));
+        }
+
+        return ans.toString();
     }
 }
