@@ -1,145 +1,132 @@
 class Solution {
-    public String lexPalindromicPermutation(
-            String s, String target) {
-
-        int n = s.length();
-
-        int[] freq = new int[26];
-
+    public String lexPalindromicPermutation(String s, String target) {
+        int[] a = new int[26];
         for (char ch : s.toCharArray()) {
-            freq[ch - 'a']++;
+            a[ch - 'a']++;
         }
-
-        // A palindrome can have at most one odd frequency
-        int odd = 0;
-        int middle = -1;
-
+        char mid = '.';
         for (int i = 0; i < 26; i++) {
-            if (freq[i] % 2 == 1) {
-                odd++;
-                middle = i;
+            if ((a[i] & 1) == 1) {
+                if (mid != '.')
+                    return "";
+                mid = (char) (i + (int) 'a');
             }
+            a[i] /= 2;
         }
-
-        if (odd > 1) {
-            return "";
-        }
-
-        int halfLen = n / 2;
-
-        // Number of each character available in the first half
-        int[] half = new int[26];
-
-        for (int i = 0; i < 26; i++) {
-            half[i] = freq[i] / 2;
-        }
-
-        /*
-         * First check whether target's first half
-         * can itself be used as the palindrome's first half.
-         */
-        int[] remaining = half.clone();
-        boolean possible = true;
-
-        for (int i = 0; i < halfLen; i++) {
-            int c = target.charAt(i) - 'a';
-
-            if (remaining[c] == 0) {
-                possible = false;
-                break;
-            }
-
-            remaining[c]--;
-        }
-
-        if (possible) {
-            String firstHalf = target.substring(0, halfLen);
-
-            String candidate = makePalindrome(firstHalf, middle);
-
-            if (candidate.compareTo(target) > 0) {
-                return candidate;
-            }
-        }
-
-        /*
-         * Find the smallest first half greater than
-         * target's first half.
-         *
-         * Try changing the rightmost possible position first.
-         */
-        for (int i = halfLen - 1; i >= 0; i--) {
-
-            remaining = half.clone();
-            boolean ok = true;
-
-            // Match target[0 ... i-1]
-            for (int j = 0; j < i; j++) {
-
-                int c = target.charAt(j) - 'a';
-
-                if (remaining[c] == 0) {
-                    ok = false;
-                    break;
+        StringBuilder str = new StringBuilder();
+        int flag = 0;
+        for (int i = 0; i < s.length() / 2; i++) {
+            char ch = target.charAt(i);
+            if (flag == 0) {
+                boolean ok = false;
+                if (a[ch - 'a'] > 0) {
+                    a[ch - 'a']--;
+                    str.append(ch);
+                    continue;
                 }
-
-                remaining[c]--;
-            }
-
-            if (!ok) {
-                continue;
-            }
-
-            // At position i, choose the smallest
-            // character strictly greater than target[i]
-            int targetChar = target.charAt(i) - 'a';
-
-            for (int c = targetChar + 1; c < 26; c++) {
-
-                if (remaining[c] > 0) {
-
-                    remaining[c]--;
-
-                    StringBuilder firstHalf = new StringBuilder();
-
-                    // Prefix equal to target
-                    firstHalf.append(target, 0, i);
-
-                    // Bigger character
-                    firstHalf.append((char) ('a' + c));
-
-                    // Fill remaining positions with smallest chars
+                for (int j = ch - 'a'; j < 26; j++) {
+                    if (a[j] > 0) {
+                        a[j]--;
+                        ok = true;
+                        str.append((char) (j + 'a'));
+                        break;
+                    }
+                }
+                if (ok) {
+                    flag = 1;
+                    continue;
+                }
+                for (int j = i - 1; j >= 0 && !ok; j--) {
                     for (int k = 0; k < 26; k++) {
-                        while (remaining[k] > 0) {
-                            firstHalf.append((char) ('a' + k));
-                            remaining[k]--;
+
+                        if (k > str.charAt(j) - 'a' && a[k] > 0) {
+                            a[str.charAt(j) - 'a']++;
+                            str.setCharAt(j, (char) (k + 'a'));
+                            a[k]--;
+                            ok = true;
+                            break;
                         }
                     }
+                    if (ok) {
+                        i = j;
+                        flag = 1;
+                        break;
+                    }
+                    a[str.charAt(j) - 'a']++;
+                    str.deleteCharAt(str.length() - 1);
+                }
+                if (!ok)
+                    return "";
 
-                    return makePalindrome(firstHalf.toString(), middle);
+            } else {
+                for (int j = 0; j < 26; j++) {
+                    if (a[j] > 0) {
+                        a[j]--;
+                        str.append((char) (j + 'a'));
+                        break;
+                    }
                 }
             }
+
         }
+        StringBuilder con = palind(str, mid);
+        if (comp(con, new StringBuilder(target)) == 1)
+            return con.toString();
+        next_perm(str);
+        con = palind(str, mid);
+        if (comp(con, new StringBuilder(target)) == 1)
+            return con.toString();
 
         return "";
+
     }
 
-    private String makePalindrome(String firstHalf, int middle) {
-
-        StringBuilder ans = new StringBuilder();
-
-        ans.append(firstHalf);
-
-        // Middle character for odd length
-        if (middle != -1) {
-            ans.append((char) ('a' + middle));
+    int comp(StringBuilder s1, StringBuilder s2) {
+        for (int i = 0; i < s1.length(); i++) {
+            if (s1.charAt(i) == s2.charAt(i))
+                continue;
+            return s1.charAt(i) < s2.charAt(i) ? -1 : 1;
         }
+        return 0;
+    }
 
-        // Reverse first half
-        for (int i = firstHalf.length() - 1; i >= 0; i--) {
-            ans.append(firstHalf.charAt(i));
+    StringBuilder palind(StringBuilder s, char mid) {
+        StringBuilder con = new StringBuilder();
+        con.append(s);
+        if (mid != '.')
+            con.append(mid);
+        s.reverse();
+        con.append(s);
+        s.reverse();
+        return con;
+    }
+
+    void swap(StringBuilder s, int i, int j) {
+        s.setCharAt(i, (char) (s.charAt(i) ^ s.charAt(j)));
+        s.setCharAt(j, (char) (s.charAt(i) ^ s.charAt(j)));
+        s.setCharAt(i, (char) (s.charAt(i) ^ s.charAt(j)));
+    }
+
+    void next_perm(StringBuilder s) {
+        int n = s.length();
+        int pos = -1;
+        for (int i = n - 2; i >= 0; i--) {
+            if (s.charAt(i) < s.charAt(i + 1)) {
+                pos = i;
+                break;
+            }
         }
+        if (pos == -1)
+            return;
+        for (int i = n - 1; i >= 0; i--) {
+            if (s.charAt(i) > s.charAt(pos)) {
+                swap(s, i, pos);
+                for (int j = pos + 1, r = n - 1; j < r; j++, r--) {
+                    swap(s, j, r);
+                }
 
-        return ans.toString();
+                break;
+            }
+        }
     }
 }
