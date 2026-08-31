@@ -10,49 +10,65 @@
  */
 class Solution {
     public int[] nodesBetweenCriticalPoints(ListNode head) {
-        int[] ans = new int[2];
-        int idx = 1;
-        int f_idx = -1;
-        int l_idx = -1;
-        int min_dist = Integer.MAX_VALUE;
 
-        ListNode a = head;
-        ListNode b = a.next;
-        ListNode c = b.next;
-        if (c == null) {
-            ans[0] = -1;
-            ans[1] = -1;
-            return ans;
-        }
+        int prev = head.val;
+        int curr, next;
+        ListNode temp = head.next;
 
-        while (c != null) {
-            if (b.val < a.val && b.val < c.val || b.val > a.val && b.val > c.val) {
-                if (f_idx == -1)
-                    f_idx = idx;
-                if (l_idx != -1) {
-                    int dist = idx - l_idx;
-                    min_dist = Math.min(dist, min_dist);
-                }
-                l_idx = idx;
+        int mindis;
+        int maxdis;
+
+        int firstidx = 0, curridx = 0, previdx = 0;
+
+        while (temp.next != null) {
+            curr = temp.val;
+            next = temp.next.val;
+            temp = temp.next;
+            if (curr < prev && curr < next || curr > prev && curr > next) {
+                curridx = 1;
+                firstidx = 1;
+                prev = curr;
+                break;
             }
-
-            idx++;
-            a = a.next;
-            b = b.next;
-            c = c.next;
-
+            prev = curr;
         }
 
-        int max_dist = l_idx - f_idx;
-        if (max_dist == 0)
-            max_dist = -1;
+        if (firstidx == 0)
+            return new int[] { -1, -1 };
 
-        if (min_dist == Integer.MAX_VALUE)
-            min_dist = -1;
+        while (temp.next != null) {
+            curr = temp.val;
+            next = temp.next.val;
+            temp = temp.next;
+            curridx++;
+            if (curr < prev && curr < next || curr > prev && curr > next) {
+                previdx = curridx;
+                prev = curr;
+                break;
+            }
+            prev = curr;
+        }
 
-        ans[0] = min_dist;
-        ans[1] = max_dist;
+        if (previdx == 0)
+            return new int[] { -1, -1 };
 
-        return ans;
+        mindis = maxdis = curridx - firstidx;
+
+        while (temp.next != null) {
+            curr = temp.val;
+            next = temp.next.val;
+            temp = temp.next;
+            curridx++;
+            if (curr < prev && curr < next || curr > prev && curr > next) {
+                maxdis = curridx - firstidx;
+                if ((curridx - previdx) < mindis)
+                    mindis = curridx - previdx;
+                previdx = curridx;
+
+            }
+            prev = curr;
+        }
+
+        return new int[] { mindis, maxdis };
     }
 }
