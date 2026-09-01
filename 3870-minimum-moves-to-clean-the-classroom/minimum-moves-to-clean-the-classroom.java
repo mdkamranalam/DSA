@@ -45,10 +45,6 @@ class Solution {
 
         final int allClean = (1 << litterCount) - 1;
 
-        /*
-         * strongest[mask][cell] records the greatest remaining
-         * energy seen for this cleaned-litter set at this cell.
-         */
         int[][] strongest = new int[1 << litterCount][cells];
 
         for (int[] row : strongest) {
@@ -72,10 +68,6 @@ class Solution {
                     return moves;
                 }
 
-                /*
-                 * A state reaching the same (cell, mask) with more
-                 * energy dominates this state.
-                 */
                 if (cur.power < strongest[cur.cleaned][cur.cell]
                         || cur.power == 0) {
                     continue;
