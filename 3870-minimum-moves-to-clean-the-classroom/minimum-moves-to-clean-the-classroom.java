@@ -1,141 +1,128 @@
+import java.util.*;
+
 class Solution {
+    private static final int[][] STEP = {
+            { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }
+    };
 
-    class node {
-        int i;
-        int j;
-        int step;
-        int liter;
-        int energy;
+    private static final class State {
+        final int cell;
+        final int cleaned;
+        final int power;
 
-        public node(int i, int j, int step, int liter, int energy) {
-            this.i = i;
-            this.j = j;
-            this.step = step;
-            this.liter = liter;
-            this.energy = energy;
+        State(int cell, int cleaned, int power) {
+            this.cell = cell;
+            this.cleaned = cleaned;
+            this.power = power;
         }
     }
 
-    public int minMoves(String[] classroom, int e) {
+    public int minMoves(String[] classroom, int energy) {
+        final int height = classroom.length;
+        final int width = classroom[0].length();
+        final int cells = height * width;
 
-        int n = classroom.length;
-        int m = classroom[0].length();
+        char[][] room = new char[height][];
+        int[] litterBit = new int[cells];
 
-        int x = -1;
-        int y = -1;
+        int start = -1;
+        int litterCount = 0;
 
-        int l = 0;
+        for (int r = 0; r < height; r++) {
+            room[r] = classroom[r].toCharArray();
 
-        int[][] id = new int[n][m];
+            for (int c = 0; c < width; c++) {
+                int id = r * width + c;
 
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < m; j++) {
-                id[i][j] = -1;
-
-                char ch = classroom[i].charAt(j);
-
-                if (ch == 'S') {
-                    x = i;
-                    y = j;
-                }
-
-                if (ch == 'L') {
-                    id[i][j] = l;
-                    l++;
+                switch (room[r][c]) {
+                    case 'S' -> start = id;
+                    case 'L' -> litterBit[id] = 1 << litterCount++;
+                    default -> {
+                    }
                 }
             }
         }
 
-        int total = 1 << l;
+        final int allClean = (1 << litterCount) - 1;
 
-        int[][][] visited = new int[n][m][total];
+        /*
+         * strongest[mask][cell] records the greatest remaining
+         * energy seen for this cleaned-litter set at this cell.
+         */
+        int[][] strongest = new int[1 << litterCount][cells];
 
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < m; j++) {
-                for (int k = 0; k < total; k++) {
-                    visited[i][j][k] = -1;
-                }
-            }
+        for (int[] row : strongest) {
+            Arrays.fill(row, -1);
         }
 
-        Queue<node> pq = new LinkedList<>();
+        ArrayDeque<State> frontier = new ArrayDeque<>();
 
-        pq.add(new node(x, y, 0, 0, e));
+        frontier.addLast(new State(start, 0, energy));
+        strongest[0][start] = energy;
 
-        visited[x][y][0] = e;
+        int moves = 0;
 
-        int[] dx = { -1, 1, 0, 0 };
-        int[] dy = { 0, 0, -1, 1 };
+        while (!frontier.isEmpty()) {
+            int levelSize = frontier.size();
 
-        while (pq.size() > 0) {
+            while (levelSize-- > 0) {
+                State cur = frontier.removeFirst();
 
-            node abc = pq.poll();
+                if (cur.cleaned == allClean) {
+                    return moves;
+                }
 
-            int i = abc.i;
-            int j = abc.j;
-            int step = abc.step;
-            int liter = abc.liter;
-            int energy = abc.energy;
-
-            if (classroom[i].charAt(j) == 'L') {
-                int idd = id[i][j];
-
-                liter = liter | (1 << idd);
-            }
-
-            if (liter == total - 1) {
-                return step;
-            }
-
-            if (classroom[i].charAt(j) == 'R') {
-                energy = e;
-            }
-
-            if (energy == 0) {
-                continue;
-            }
-
-            for (int d = 0; d < 4; d++) {
-
-                int ni = i + dx[d];
-                int nj = j + dy[d];
-
-                if (ni < 0 || ni >= n || nj < 0 || nj >= m) {
+                /*
+                 * A state reaching the same (cell, mask) with more
+                 * energy dominates this state.
+                 */
+                if (cur.power < strongest[cur.cleaned][cur.cell]
+                        || cur.power == 0) {
                     continue;
                 }
 
-                if (classroom[ni].charAt(nj) == 'X') {
-                    continue;
+                int r = cur.cell / width;
+                int c = cur.cell % width;
+
+                for (int[] d : STEP) {
+                    int nr = r + d[0];
+                    int nc = c + d[1];
+
+                    if (!inside(nr, nc, height, width)
+                            || room[nr][nc] == 'X') {
+                        continue;
+                    }
+
+                    int nextCell = nr * width + nc;
+
+                    int nextMask = cur.cleaned | litterBit[nextCell];
+
+                    int nextPower = room[nr][nc] == 'R'
+                            ? energy
+                            : cur.power - 1;
+
+                    if (nextPower <= strongest[nextMask][nextCell]) {
+                        continue;
+                    }
+
+                    strongest[nextMask][nextCell] = nextPower;
+
+                    frontier.addLast(
+                            new State(nextCell, nextMask, nextPower));
                 }
-
-                int newEnergy = energy - 1;
-                int newLiter = liter;
-
-                if (classroom[ni].charAt(nj) == 'L') {
-                    int idd = id[ni][nj];
-
-                    newLiter = newLiter | (1 << idd);
-                }
-
-                if (classroom[ni].charAt(nj) == 'R') {
-                    newEnergy = e;
-                }
-
-                if (visited[ni][nj][newLiter] >= newEnergy) {
-                    continue;
-                }
-
-                visited[ni][nj][newLiter] = newEnergy;
-
-                pq.add(new node(
-                        ni,
-                        nj,
-                        step + 1,
-                        newLiter,
-                        newEnergy));
             }
+
+            moves++;
         }
 
         return -1;
+    }
+
+    private static boolean inside(
+            int r, int c, int height, int width) {
+        return r >= 0
+                && r < height
+                && c >= 0
+                && c < width;
     }
 }
