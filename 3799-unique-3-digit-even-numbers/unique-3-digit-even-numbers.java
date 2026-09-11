@@ -1,23 +1,40 @@
 class Solution {
     public int totalNumbers(int[] digits) {
-        Set<Integer> s = new HashSet<>();
-        int n = digits.length;
-        for (int i = 0; i < n; ++i) {
-            if (digits[i] % 2 == 1) {
-                continue;
+        int[] freq = new int[10];
+        for (int digit : digits)
+            freq[digit]++;
+        int zero = 0, even = 0, all = 0;
+
+        for (int i = 0; i < 10; i++)
+            if (freq[i] > 0) {
+                if (i == 0)
+                    zero++;
+                if (i % 2 == 0)
+                    even++;
+                all++;
             }
-            for (int j = 0; j < n; ++j) {
-                if (i == j) {
-                    continue;
-                }
-                for (int k = 0; k < n; ++k) {
-                    if (digits[k] == 0 || k == i || k == j) {
-                        continue;
-                    }
-                    s.add(digits[k] * 100 + digits[j] * 10 + digits[i]);
+
+        int count = even * (all - 1) * (all - 2);
+        if (zero == 1)
+            count -= (even - 1) * (all - 2);
+
+        for (int i = 0; i < 10; i++) {
+            if (freq[i] >= 2) {
+                if (i == 0)
+                    count += all - 1;
+                else if (i % 2 == 1)
+                    count += even;
+                else {
+                    count += 3 * (even - 1) - zero;
+                    count += 2 * (all - even);
                 }
             }
         }
-        return s.size();
+
+        for (int i = 2; i < 10; i += 2)
+            if (freq[i] >= 3)
+                count++;
+
+        return count;
     }
 }
