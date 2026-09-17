@@ -1,29 +1,31 @@
-public class Solution {
+class Solution {
     public int minSumOfLengths(int[] arr, int target) {
         int n = arr.length;
         int[] minLen = new int[n];
-        int INF = Integer.MAX_VALUE;
-        int minSoFar = INF;
-        int ans = INF;
-        int sum = 0;
-        int start = 0;
+        int l = 0, sum = 0;
+        int ans = Integer.MAX_VALUE;
+        int best = Integer.MAX_VALUE;
 
-        for (int i = 0; i < n; i++) {
-            sum += arr[i];
+        for (int r = 0; r < n; r++) {
+            sum += arr[r];
+
             while (sum > target) {
-                sum -= arr[start];
-                start++;
+                sum -= arr[l++];
             }
+
             if (sum == target) {
-                int currLen = i - start + 1;
-                if (start > 0 && minLen[start - 1] != INF) {
-                    ans = Math.min(ans, currLen + minLen[start - 1]);
+                int currLen = r - l + 1;
+
+                if (l > 0 && minLen[l - 1] != Integer.MAX_VALUE) {
+                    ans = Math.min(ans, currLen + minLen[l - 1]);
                 }
-                minSoFar = Math.min(minSoFar, currLen);
+
+                best = Math.min(best, currLen);
             }
-            minLen[i] = minSoFar;
+
+            minLen[r] = best;
         }
 
-        return ans == INF ? -1 : ans;
+        return ans == Integer.MAX_VALUE ? -1 : ans;
     }
 }
