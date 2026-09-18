@@ -4,41 +4,58 @@ class Solution {
         int[] first = new int[26];
         int[] last = new int[26];
         Arrays.fill(first, -1);
-        for (int i = 0; i < n; ++i) {
-            int x = s.charAt(i) - 'a';
-            if (first[x] == -1) {
-                first[x] = i;
+        Arrays.fill(last, -1);
+
+        for (int i = 0; i < n; i++) {
+            int charIdx = s.charAt(i) - 'a';
+            if (first[charIdx] == -1) {
+                first[charIdx] = i;
             }
-            last[x] = i;
+
+            last[charIdx] = i;
         }
-        List<int[]> segs = new ArrayList<>();
-        for (int x = 0; x < 26; ++x) {
-            if (first[x] == -1) {
+
+        List<int[]> validIntervals = new ArrayList<>();
+
+        for (int i = 0; i < 26; i++) {
+            if (first[i] == -1)
                 continue;
-            }
-            int l = first[x], r = last[x];
-            int i = l;
-            for (; i <= r; ++i) {
-                int y = s.charAt(i) - 'a';
-                if (first[y] < l) {
+
+            int start = first[i];
+            int end = last[i];
+            boolean isValid = true;
+
+            for (int j = start; j <= end; j++) {
+                int currChar = s.charAt(j) - 'a';
+
+                if (first[currChar] < start) {
+                    isValid = false;
                     break;
                 }
-                r = Math.max(r, last[y]);
+
+                end = Math.max(end, last[currChar]);
             }
-            if (i > r) {
-                segs.add(new int[] { l, r });
-            }
-        }
-        segs.sort((a, b) -> a[1] - b[1]);
-        List<String> ans = new ArrayList<>();
-        int end = -1;
-        for (int[] e : segs) {
-            int l = e[0], r = e[1];
-            if (l > end) {
-                ans.add(s.substring(l, r + 1));
-                end = r;
+
+            if (isValid) {
+                validIntervals.add(new int[] { start, end });
             }
         }
-        return ans;
+
+        validIntervals.sort((a, b) -> Integer.compare(a[1], b[1]));
+
+        int prevIdx = -1;
+        List<String> result = new ArrayList<>();
+
+        for (int[] interval : validIntervals) {
+            int start = interval[0];
+            int end = interval[1];
+
+            if (start > prevIdx) {
+                result.add(s.substring(start, end + 1));
+                prevIdx = end;
+            }
+        }
+
+        return result;
     }
 }
