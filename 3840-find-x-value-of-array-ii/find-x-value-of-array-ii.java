@@ -1,98 +1,132 @@
-class Node {
-    int l, r, prod;
-    int[] cnt;
+class Solution {
+    public int[] resultArray(int[] nums, int k, int[][] queries) {
+        SegmentTree st = new SegmentTree(nums, k);
 
-    Node(int l, int r, int k) {
-        this.l = l;
-        this.r = r;
-        this.prod = 1;
-        this.cnt = new int[k];
+        int[] output = new int[queries.length];
+
+        for (int i = 0; i < queries.length; i++) {
+            int[] query = queries[i];
+            st.update(query[0], query[1]);
+
+            output[i] = st.query(query[2], nums.length - 1, query[3]);
+        }
+
+        return output;
     }
 }
 
 class SegmentTree {
-    private int k;
-    private Node[] tr;
+    final int modulo;
+    final int[][] data;
+    final int[] modProd;
+    final int size;
 
-    SegmentTree(int[] nums, int k) {
-        this.k = k;
-        int n = nums.length;
-        tr = new Node[n << 2];
-        build(1, 1, n, nums);
+    protected SegmentTree(int[] nums, int k) {
+        modulo = k;
+        size = nums.length;
+        data = new int[size << 2 | 1][k];
+        modProd = new int[size << 2 | 1];
+
+        build(1, 0, size - 1, nums);
     }
 
-    private Node merge(Node a, Node b) {
-        Node c = new Node(0, 0, k);
-        c.prod = a.prod * b.prod % k;
-        System.arraycopy(a.cnt, 0, c.cnt, 0, k);
-        for (int r = 0; r < k; ++r) {
-            c.cnt[a.prod * r % k] += b.cnt[r];
-        }
-        return c;
-    }
-
-    private void pushup(int u) {
-        Node p = merge(tr[u << 1], tr[u << 1 | 1]);
-        tr[u].prod = p.prod;
-        tr[u].cnt = p.cnt;
-    }
-
-    private void build(int u, int l, int r, int[] nums) {
-        tr[u] = new Node(l, r, k);
+    private void build(int idx, int l, int r, int[] nums) {
         if (l == r) {
-            int v = nums[l - 1] % k;
-            tr[u].prod = v;
-            tr[u].cnt[v] = 1;
+            data[idx][nums[l] % modulo] = 1;
+            modProd[idx] = nums[l] % modulo;
             return;
         }
+
         int mid = (l + r) >> 1;
-        build(u << 1, l, mid, nums);
-        build(u << 1 | 1, mid + 1, r, nums);
-        pushup(u);
+        build(idx << 1, l, mid, nums);
+        build(idx << 1 | 1, mid + 1, r, nums);
+
+        int[] lhs = data[idx << 1];
+        int[] rhs = data[idx << 1 | 1];
+
+        for (int i = 0; i < modulo; i++) {
+            data[idx][i] = lhs[i];
+        }
+        for (int i = 0; i < modulo; i++) {
+            data[idx][(i * modProd[idx << 1]) % modulo] += rhs[i];
+        }
+
+        modProd[idx] = (modProd[idx << 1] * modProd[idx << 1 | 1]) % modulo;
     }
 
-    void modify(int u, int x, int v) {
-        if (tr[u].l == tr[u].r) {
-            v %= k;
-            tr[u].prod = v;
-            Arrays.fill(tr[u].cnt, 0);
-            tr[u].cnt[v] = 1;
+    protected void update(int index, int val) {
+        update(1, 0, size - 1, index, val);
+    }
+
+    private void update(int idx, int l, int r, int pos, int val) {
+        if (l == r) {
+            data[idx] = new int[modulo];
+            data[idx][val % modulo] = 1;
+            modProd[idx] = val % modulo;
             return;
         }
-        int mid = (tr[u].l + tr[u].r) >> 1;
-        if (x <= mid) {
-            modify(u << 1, x, v);
+
+        int mid = (l + r) >> 1;
+        if (pos <= mid) {
+            update(idx << 1, l, mid, pos, val);
         } else {
-            modify(u << 1 | 1, x, v);
+            update(idx << 1 | 1, mid + 1, r, pos, val);
         }
-        pushup(u);
+
+        int[] lhs = data[idx << 1];
+        int[] rhs = data[idx << 1 | 1];
+
+        for (int i = 0; i < modulo; i++) {
+            data[idx][i] = lhs[i];
+        }
+        for (int i = 0; i < modulo; i++) {
+            data[idx][(i * modProd[idx << 1]) % modulo] += rhs[i];
+        }
+
+        modProd[idx] = (modProd[idx << 1] * modProd[idx << 1 | 1]) % modulo;
     }
 
-    Node query(int u, int l, int r) {
-        if (tr[u].l >= l && tr[u].r <= r) {
-            return tr[u];
-        }
-        int mid = (tr[u].l + tr[u].r) >> 1;
-        if (r <= mid) {
-            return query(u << 1, l, r);
-        }
-        if (l > mid) {
-            return query(u << 1 | 1, l, r);
-        }
-        return merge(query(u << 1, l, r), query(u << 1 | 1, l, r));
+    protected int query(int from, int to, int x) {
+        Pair res = query(1, 0, size - 1, from, to);
+        return res == null ? 0 : res.data[x];
     }
-}
 
-class Solution {
-    public int[] resultArray(int[] nums, int k, int[][] queries) {
-        int n = nums.length;
-        SegmentTree tree = new SegmentTree(nums, k);
-        int[] ans = new int[queries.length];
-        for (int i = 0; i < queries.length; ++i) {
-            int idx = queries[i][0], val = queries[i][1], start = queries[i][2], x = queries[i][3];
-            tree.modify(1, idx + 1, val);
-            ans[i] = tree.query(1, start + 1, n).cnt[x];
+    private Pair query(int idx, int l, int r, int from, int to) {
+        if (from > r || to < r)
+            return null;
+        if (l >= from && r <= to)
+            return new Pair(data[idx], modProd[idx]);
+
+        int mid = (l + r) >> 1;
+
+        return combine(query(idx << 1, l, mid, from, to), query(idx << 1 | 1, mid + 1, r, from, to));
+    }
+
+    private Pair combine(Pair left, Pair right) {
+        if (left == null)
+            return right;
+        if (right == null)
+            return left;
+        int[] res = new int[modulo];
+        for (int i = 0; i < modulo; i++) {
+            res[i] = left.data[i];
         }
-        return ans;
+        for (int i = 0; i < modulo; i++) {
+            res[(i * left.modProd) % modulo] += right.data[i];
+        }
+
+        left.data = res;
+        left.modProd = (left.modProd * right.modProd) % modulo;
+        return left;
+    }
+
+    private static class Pair {
+        int[] data;
+        int modProd;
+
+        protected Pair(int[] data, int modProd) {
+            this.data = data;
+            this.modProd = modProd;
+        }
     }
 }
