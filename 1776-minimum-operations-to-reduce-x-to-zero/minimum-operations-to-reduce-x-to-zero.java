@@ -1,20 +1,50 @@
 class Solution {
     public int minOperations(int[] nums, int x) {
-        int s = -x;
-        for (int v : nums) {
-            s += v;
-        }
-        int mx = -1, t = 0;
         int n = nums.length;
-        for (int i = 0, j = 0; i < n; ++i) {
-            t += nums[i];
-            while (j <= i && t > s) {
-                t -= nums[j++];
+
+        // Calculate total sum
+        int totalSum = 0;
+        for (int num : nums) {
+            totalSum += num;
+        }
+
+        int target = totalSum - x;
+
+        // If target is negative, impossible
+        if (target < 0) {
+            return -1;
+        }
+
+        // If target is 0, we need to remove all elements
+        if (target == 0) {
+            return n;
+        }
+
+        int left = 0;
+        int sum = 0;
+        int maxLength = -1;
+
+        // Sliding window
+        for (int right = 0; right < n; right++) {
+            sum += nums[right];
+
+            // Shrink window if sum becomes too large
+            while (sum > target) {
+                sum -= nums[left];
+                left++;
             }
-            if (t == s) {
-                mx = Math.max(mx, i - j + 1);
+
+            // Found a subarray with target sum
+            if (sum == target) {
+                maxLength = Math.max(maxLength, right - left + 1);
             }
         }
-        return mx == -1 ? -1 : n - mx;
+
+        // If no valid subarray exists
+        if (maxLength == -1) {
+            return -1;
+        }
+
+        return n - maxLength;
     }
 }
