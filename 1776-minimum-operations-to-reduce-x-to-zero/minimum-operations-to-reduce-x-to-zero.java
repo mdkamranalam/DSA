@@ -1,20 +1,30 @@
 class Solution {
     public int minOperations(int[] nums, int x) {
-        int s = -x;
-        for (int v : nums) {
-            s += v;
+        int sum = 0;
+        for (int i : nums) {
+            sum += i;
         }
-        int mx = -1, t = 0;
-        int n = nums.length;
-        for (int i = 0, j = 0; i < n; ++i) {
-            t += nums[i];
-            while (j <= i && t > s) {
-                t -= nums[j++];
+
+        int target = sum - x;
+        int left = 0, right = 0;
+        int windowSum = 0;
+        int maxWindow = Integer.MIN_VALUE;
+        while (right < nums.length) {
+            int r = nums[right];
+            right++;
+            windowSum += r;
+
+            while (left < right && windowSum > target) {
+                int l = nums[left];
+                left++;
+                windowSum -= l;
             }
-            if (t == s) {
-                mx = Math.max(mx, i - j + 1);
+
+            if (windowSum == target) {
+                maxWindow = Math.max(maxWindow, right - left);
             }
         }
-        return mx == -1 ? -1 : n - mx;
+
+        return maxWindow == Integer.MIN_VALUE ? -1 : nums.length - maxWindow;
     }
 }
