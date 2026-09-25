@@ -1,22 +1,49 @@
 class Solution {
-    private TreeSet<String> s = new TreeSet<>();
+    private String exp;
+    private int i;
 
     public List<String> braceExpansionII(String expression) {
-        dfs(expression);
-        return new ArrayList<>(s);
+        exp = expression;
+        i = 0;
+        List<String> ans = new ArrayList<>(expr());
+        Collections.sort(ans);
+        return ans;
     }
 
-    private void dfs(String exp) {
-        int j = exp.indexOf('}');
-        if (j == -1) {
-            s.add(exp);
-            return;
+    private Set<String> expr() {
+        Set<String> res = term();
+        while (i < exp.length() && exp.charAt(i) == ',') {
+            ++i;
+            res.addAll(term());
         }
-        int i = exp.lastIndexOf('{', j);
-        String a = exp.substring(0, i);
-        String c = exp.substring(j + 1);
-        for (String b : exp.substring(i + 1, j).split(",")) {
-            dfs(a + b + c);
+        return res;
+    }
+
+    private Set<String> term() {
+        Set<String> res = new HashSet<>();
+        res.add("");
+        while (i < exp.length() && exp.charAt(i) != ',' && exp.charAt(i) != '}') {
+            Set<String> cur = new HashSet<>();
+            if (exp.charAt(i) == '{') {
+                ++i;
+                cur = expr();
+                ++i;
+            } else {
+                int j = i + 1;
+                while (j < exp.length() && exp.charAt(j) >= 'a' && exp.charAt(j) <= 'z') {
+                    ++j;
+                }
+                cur.add(exp.substring(i, j));
+                i = j;
+            }
+            Set<String> nxt = new HashSet<>();
+            for (String a : res) {
+                for (String b : cur) {
+                    nxt.add(a + b);
+                }
+            }
+            res = nxt;
         }
+        return res;
     }
 }
