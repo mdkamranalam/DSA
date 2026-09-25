@@ -1,49 +1,44 @@
 class Solution {
-    private String exp;
-    private int i;
-
     public List<String> braceExpansionII(String expression) {
-        exp = expression;
-        i = 0;
-        List<String> ans = new ArrayList<>(expr());
-        Collections.sort(ans);
-        return ans;
+        return dfs(expression, 0, expression.length() - 1);
     }
 
-    private Set<String> expr() {
-        Set<String> res = term();
-        while (i < exp.length() && exp.charAt(i) == ',') {
-            ++i;
-            res.addAll(term());
-        }
-        return res;
+    private List<String> dfs(final String expression, int s, int e) {
+        TreeSet<String> ans = new TreeSet<>();
+        List<List<String>> groups = new ArrayList<>();
+        groups.add(new ArrayList<>());
+        int layer = 0;
+        int left = 0;
+
+        for (int i = s; i <= e; ++i)
+            if (expression.charAt(i) == '{' && ++layer == 1)
+                left = i + 1;
+            else if (expression.charAt(i) == '}' && --layer == 0)
+                merge(groups, dfs(expression, left, i - 1));
+            else if (expression.charAt(i) == ',' && layer == 0)
+                groups.add(new ArrayList<>());
+            else if (layer == 0)
+                merge(groups, new ArrayList<>(List.of(String.valueOf(expression.charAt(i)))));
+
+        for (final List<String> group : groups)
+            for (final String word : group)
+                ans.add(word);
+
+        return new ArrayList<>(ans);
     }
 
-    private Set<String> term() {
-        Set<String> res = new HashSet<>();
-        res.add("");
-        while (i < exp.length() && exp.charAt(i) != ',' && exp.charAt(i) != '}') {
-            Set<String> cur = new HashSet<>();
-            if (exp.charAt(i) == '{') {
-                ++i;
-                cur = expr();
-                ++i;
-            } else {
-                int j = i + 1;
-                while (j < exp.length() && exp.charAt(j) >= 'a' && exp.charAt(j) <= 'z') {
-                    ++j;
-                }
-                cur.add(exp.substring(i, j));
-                i = j;
-            }
-            Set<String> nxt = new HashSet<>();
-            for (String a : res) {
-                for (String b : cur) {
-                    nxt.add(a + b);
-                }
-            }
-            res = nxt;
+    void merge(List<List<String>> groups, List<String> group) {
+        if (groups.get(groups.size() - 1).isEmpty()) {
+            groups.set(groups.size() - 1, group);
+            return;
         }
-        return res;
+
+        List<String> mergedGroup = new ArrayList<>();
+
+        for (final String word1 : groups.get(groups.size() - 1))
+            for (final String word2 : group)
+                mergedGroup.add(word1 + word2);
+
+        groups.set(groups.size() - 1, mergedGroup);
     }
 }
