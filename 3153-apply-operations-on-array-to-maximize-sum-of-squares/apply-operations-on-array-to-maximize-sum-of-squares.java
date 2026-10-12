@@ -1,25 +1,26 @@
 class Solution {
     public int maxSum(List<Integer> nums, int k) {
-        final int mod = (int) 1e9 + 7;
-        int[] cnt = new int[31];
-        for (int x : nums) {
-            for (int i = 0; i < 31; ++i) {
-                if ((x >> i & 1) == 1) {
-                    ++cnt[i];
+        int[] numOnes = new int[32];
+        for (int i = 0; i < nums.size(); i++) {
+            int val = nums.get(i);
+            for (int j = 0; j < 32; j++) {
+                if ((val & 1) != 0) {
+                    numOnes[j]++;
                 }
+                val >>>= 1;
             }
         }
-        long ans = 0;
-        while (k-- > 0) {
-            int x = 0;
-            for (int i = 0; i < 31; ++i) {
-                if (cnt[i] > 0) {
-                    x |= 1 << i;
-                    --cnt[i];
+        long result = 0;
+        for (int i = 0; i < k; i++) {
+            int val = 0;
+            for (int j = 31; j >= 0; j--) {
+                if (numOnes[j] > 0) {
+                    val |= 1 << j;
+                    numOnes[j]--;
                 }
             }
-            ans = (ans + 1L * x * x) % mod;
+            result = (result + ((long) val * (long) val)) % 1000000007;
         }
-        return (int) ans;
+        return (int) result;
     }
 }
