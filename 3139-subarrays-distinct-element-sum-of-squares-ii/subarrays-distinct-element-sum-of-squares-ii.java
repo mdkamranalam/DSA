@@ -1,126 +1,164 @@
-class Solution {
+import java.util.Arrays;
 
-    static final long MOD = 1_000_000_007L;
+class Solution_segtree {
+    static final int MOD = 1_000_000_007;
 
-    long[] sum;
-    long[] squareSum;
-    long[] lazy;
+    static class SegmentTree {
+        long[] lazy;
+        long[] rangeSum;
+        long[] rangeSumOfSquares;
+        int size;
+
+        SegmentTree(int size) {
+            this.size = size;
+            lazy = new long[4 * size];
+            rangeSum = new long[4 * size];
+            rangeSumOfSquares = new long[4 * size];
+        }
+
+        void applyLazy(int left, int right, int node) {
+            if (left != right) {
+                lazy[node * 2 + 1] += lazy[node];
+                lazy[node * 2 + 2] += lazy[node];
+            }
+            long length = right - left + 1;
+            long newSum = rangeSum[node] + lazy[node] * length;
+            long newSumOfSquares = rangeSumOfSquares[node] + lazy[node] * rangeSum[node] * 2
+                    + lazy[node] * lazy[node] * length;
+
+            rangeSum[node] = newSum % MOD;
+            rangeSumOfSquares[node] = newSumOfSquares % MOD;
+            lazy[node] = 0;
+        }
+
+        // overload to emulate C++ default arguments (left = 0, right = -1, node = 0)
+        void markDistinctRange(int queryStart, int queryEnd) {
+            markDistinctRange(queryStart, queryEnd, 0, -1, 0);
+        }
+
+        void markDistinctRange(int queryStart, int queryEnd, int left, int right, int node) {
+            if (right == -1)
+                right += size;
+            applyLazy(left, right, node);
+
+            if (right < queryStart || left > queryEnd)
+                return;
+            if (left >= queryStart && right <= queryEnd) {
+                lazy[node] = 1;
+                applyLazy(left, right, node);
+                return;
+            }
+
+            int mid = (left + right) >> 1;
+            markDistinctRange(queryStart, queryEnd, left, mid, node * 2 + 1);
+            markDistinctRange(queryStart, queryEnd, mid + 1, right, node * 2 + 2);
+
+            rangeSum[node] = (rangeSum[node * 2 + 1] + rangeSum[node * 2 + 2]) % MOD;
+            rangeSumOfSquares[node] = (rangeSumOfSquares[node * 2 + 1] + rangeSumOfSquares[node * 2 + 2]) % MOD;
+        }
+    }
 
     public int sumCounts(int[] nums) {
         int n = nums.length;
+        int[] lastOccurrence = new int[100001];
+        Arrays.fill(lastOccurrence, -1);
 
-        sum = new long[4 * n];
-        squareSum = new long[4 * n];
-        lazy = new long[4 * n];
-
-        int[] last = new int[100001];
-        java.util.Arrays.fill(last, -1);
-
+        SegmentTree tree = new SegmentTree(n);
         long answer = 0;
 
-        for (int r = 0; r < n; r++) {
-            int x = nums[r];
+        for (int i = 0; i < n; i++) {
 
-            int previous = last[x];
+            int start = lastOccurrence[nums[i]] + 1, end = i;
+            tree.markDistinctRange(start, end);
 
-            rangeAdd(
-                    1,
-                    0,
-                    n - 1,
-                    previous + 1,
-                    r);
+            answer = (answer + tree.rangeSumOfSquares[0]) % MOD;
 
-            answer = (answer + squareSum[1]) % MOD;
-
-            last[x] = r;
+            lastOccurrence[nums[i]] = i;
         }
-
         return (int) answer;
     }
+}
 
-    private void rangeAdd(
-            int node,
-            int left,
-            int right,
-            int ql,
-            int qr) {
+//////////// Fenwick tree approach
 
-        if (ql > right || qr < left) {
-            return;
+class Solution {
+    static final int MOD = 1_000_000_007;
+
+    // Fenwick tree (BIT) supporting range-update, range-sum-query in O(log n)
+    static class FenwickTree {
+        long[] treeMul; // Binary Indexed Tree #1 (multiplier part)
+        long[] treeAdd; // Binary Indexed Tree #2 (offset part)
+        int size;
+
+        FenwickTree(int size) {
+            this.size = size;
+            treeMul = new long[size + 2];
+            treeAdd = new long[size + 2];
         }
 
-        if (ql <= left && right <= qr) {
-            apply(node, left, right);
-            return;
+        private void pointUpdate(long[] tree, int index, long delta) {
+            for (; index <= size; index += index & (-index)) {
+                tree[index] = (tree[index] + delta) % MOD;
+            }
         }
 
-        push(node, left, right);
-
-        int mid = left + (right - left) / 2;
-
-        rangeAdd(node * 2, left, mid, ql, qr);
-        rangeAdd(node * 2 + 1, mid + 1, right, ql, qr);
-
-        pull(node);
-    }
-
-    private void apply(int node, int left, int right) {
-        long len = right - left + 1L;
-
-        // d -> d + 1
-        //
-        // (d + 1)^2 = d^2 + 2d + 1
-
-        squareSum[node] = (squareSum[node]
-                + 2L * sum[node]
-                + len) % MOD;
-
-        sum[node] = (sum[node] + len) % MOD;
-
-        lazy[node] = (lazy[node] + 1) % MOD;
-    }
-
-    private void push(int node, int left, int right) {
-        if (lazy[node] == 0 || left == right) {
-            return;
+        // adds `delta` to every element in 1-indexed inclusive range [left, right]
+        void rangeAdd(int left, int right, long delta) {
+            pointUpdate(treeMul, left, delta);
+            pointUpdate(treeMul, right + 1, -delta);
+            pointUpdate(treeAdd, left, delta * (left - 1) % MOD);
+            pointUpdate(treeAdd, right + 1, -delta * right % MOD);
         }
 
-        int mid = left + (right - left) / 2;
+        private long prefixQuery(long[] tree, int index) {
+            long result = 0;
+            for (; index > 0; index -= index & (-index)) {
+                result = (result + tree[index]) % MOD;
+            }
+            return result;
+        }
 
-        // Every pending update is +1.
-        long pending = lazy[node];
+        private long prefixSum(int index) {
+            long value = (((long) index % MOD) * prefixQuery(treeMul, index) - prefixQuery(treeAdd, index)) % MOD;
+            return (value + MOD) % MOD;
+        }
 
-        applyTimes(node * 2, left, mid, pending);
-        applyTimes(node * 2 + 1, mid + 1, right, pending);
-
-        lazy[node] = 0;
+        // sum of elements in 1-indexed inclusive range [left, right]
+        long rangeSum(int left, int right) {
+            if (left > right)
+                return 0;
+            long value = (prefixSum(right) - prefixSum(left - 1)) % MOD;
+            return (value + MOD) % MOD;
+        }
     }
 
-    private void applyTimes(
-            int node,
-            int left,
-            int right,
-            long k) {
+    public int sumCounts(int[] nums) {
+        int n = nums.length;
+        int[] lastOccurrence = new int[100001];
+        Arrays.fill(lastOccurrence, -1);
 
-        long len = right - left + 1L;
-        long oldSum = sum[node];
+        FenwickTree tree = new FenwickTree(n);
+        long totalSumOfSquares = 0; // equivalent to the segment tree's rangeSumOfSquares[0]
+        long answer = 0;
 
-        // sum(d + k)
-        sum[node] = (oldSum + k * len) % MOD;
+        for (int i = 0; i < n; i++) {
 
-        // sum((d + k)^2)
-        squareSum[node] = (squareSum[node]
-                + 2L * k % MOD * oldSum
-                + (k * k % MOD) * (len % MOD)) % MOD;
+            int start = lastOccurrence[nums[i]] + 1, end = i;
+            // convert 0-indexed [start, end] to 1-indexed [left, right] for the BIT
+            int left = start + 1, right = end + 1;
+            long rangeLength = right - left + 1;
 
-        lazy[node] = (lazy[node] + k) % MOD;
-    }
+            long sumBeforeUpdate = tree.rangeSum(left, right);
+            // Δ(sum of squares) when adding +1 to each element in the range:
+            // sum((c+1)^2 - c^2) = sum(2c + 1) = 2*sumBeforeUpdate + rangeLength
+            totalSumOfSquares = (totalSumOfSquares + 2 * sumBeforeUpdate + rangeLength) % MOD;
 
-    private void pull(int node) {
-        sum[node] = (sum[node * 2] + sum[node * 2 + 1]) % MOD;
+            tree.rangeAdd(left, right, 1);
 
-        squareSum[node] = (squareSum[node * 2]
-                + squareSum[node * 2 + 1])
-                % MOD;
+            answer = (answer + totalSumOfSquares) % MOD;
+
+            lastOccurrence[nums[i]] = i;
+        }
+        return (int) answer;
     }
 }
