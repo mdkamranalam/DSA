@@ -1,4 +1,5 @@
 class Solution {
+
     static final long MOD = 1_000_000_007L;
 
     long[] sum;
@@ -12,10 +13,7 @@ class Solution {
         squareSum = new long[4 * n];
         lazy = new long[4 * n];
 
-        // nums[i] <= 10^5
         int[] last = new int[100001];
-
-        // -1 means the value has not appeared yet.
         java.util.Arrays.fill(last, -1);
 
         long answer = 0;
@@ -25,13 +23,13 @@ class Solution {
 
             int previous = last[x];
 
-            // Distinct count increases for starting indices
-            // [previous + 1, r].
-            rangeAdd(1, 0, n - 1, previous + 1, r);
+            rangeAdd(
+                    1,
+                    0,
+                    n - 1,
+                    previous + 1,
+                    r);
 
-            // All positions after r are still zero, so the root
-            // contains exactly the sum of squares for all subarrays
-            // ending at r.
             answer = (answer + squareSum[1]) % MOD;
 
             last[x] = r;
@@ -44,14 +42,14 @@ class Solution {
             int node,
             int left,
             int right,
-            int queryLeft,
-            int queryRight) {
+            int ql,
+            int qr) {
 
-        if (queryLeft > right || queryRight < left) {
+        if (ql > right || qr < left) {
             return;
         }
 
-        if (queryLeft <= left && right <= queryRight) {
+        if (ql <= left && right <= qr) {
             apply(node, left, right);
             return;
         }
@@ -60,35 +58,24 @@ class Solution {
 
         int mid = left + (right - left) / 2;
 
-        rangeAdd(
-                node * 2,
-                left,
-                mid,
-                queryLeft,
-                queryRight);
-
-        rangeAdd(
-                node * 2 + 1,
-                mid + 1,
-                right,
-                queryLeft,
-                queryRight);
+        rangeAdd(node * 2, left, mid, ql, qr);
+        rangeAdd(node * 2 + 1, mid + 1, right, ql, qr);
 
         pull(node);
     }
 
     private void apply(int node, int left, int right) {
-        long length = right - left + 1L;
+        long len = right - left + 1L;
 
-        // If every d becomes d + 1:
+        // d -> d + 1
         //
         // (d + 1)^2 = d^2 + 2d + 1
-        //
+
         squareSum[node] = (squareSum[node]
                 + 2L * sum[node]
-                + length) % MOD;
+                + len) % MOD;
 
-        sum[node] = (sum[node] + length) % MOD;
+        sum[node] = (sum[node] + len) % MOD;
 
         lazy[node] = (lazy[node] + 1) % MOD;
     }
@@ -100,46 +87,31 @@ class Solution {
 
         int mid = left + (right - left) / 2;
 
+        // Every pending update is +1.
         long pending = lazy[node];
 
-        /*
-         * Usually lazy propagation can contain values > 1,
-         * so apply the increment repeatedly in mathematical form.
-         *
-         * For k increments:
-         *
-         * (d + k)^2 = d^2 + 2kd + k^2
-         *
-         * Therefore we handle the pending value directly.
-         */
-        applyMultiple(node * 2, left, mid, pending);
-        applyMultiple(node * 2 + 1, mid + 1, right, pending);
+        applyTimes(node * 2, left, mid, pending);
+        applyTimes(node * 2 + 1, mid + 1, right, pending);
 
         lazy[node] = 0;
     }
 
-    private void applyMultiple(
+    private void applyTimes(
             int node,
             int left,
             int right,
             long k) {
 
-        long length = right - left + 1L;
-
+        long len = right - left + 1L;
         long oldSum = sum[node];
 
-        // sum(d + k) = sum(d) + k * length
-        sum[node] = (oldSum + k * length) % MOD;
+        // sum(d + k)
+        sum[node] = (oldSum + k * len) % MOD;
 
         // sum((d + k)^2)
-        //
-        // = sum(d^2) + 2k * sum(d) + k^2 * length
-        long kSquared = (k * k) % MOD;
-
         squareSum[node] = (squareSum[node]
-                + (2L * k % MOD) * oldSum
-                + kSquared * (length % MOD))
-                % MOD;
+                + 2L * k % MOD * oldSum
+                + (k * k % MOD) * (len % MOD)) % MOD;
 
         lazy[node] = (lazy[node] + k) % MOD;
     }
