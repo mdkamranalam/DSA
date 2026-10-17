@@ -1,45 +1,71 @@
 class Solution {
+    class Element {
+        int number;
+        int digitSum;
+        int originalIndex;
+
+        Element(int number, int digitSum, int originalIndex) {
+            this.number = number;
+            this.digitSum = digitSum;
+            this.originalIndex = originalIndex;
+        }
+    }
+
+    public int sumDigit(int num) {
+        int sum = 0;
+
+        while (num > 0) {
+            sum += num % 10;
+            num /= 10;
+        }
+
+        return sum;
+    }
+
     public int minSwaps(int[] nums) {
         int n = nums.length;
-        int[] digitSum = new int[n];
+        Element[] arr = new Element[n];
+
         for (int i = 0; i < n; i++) {
-            int x = nums[i], sum = 0;
-            while (x > 0) {
-                sum += x % 10;
-                x /= 10;
-            }
-            digitSum[i] = sum;
+            arr[i] = new Element(
+                nums[i],
+                sumDigit(nums[i]),
+                i
+            );
         }
 
-        Integer[] indices = new Integer[n];
-        for (int i = 0; i < n; i++) {
-            indices[i] = i;
-        }
-        Arrays.sort(indices, (a, b) -> {
-            if (digitSum[a] != digitSum[b]) {
-                return Integer.compare(digitSum[a], digitSum[b]);
+        Arrays.sort(arr, (a, b) -> {
+            if (a.digitSum != b.digitSum) {
+                return Integer.compare(a.digitSum, b.digitSum);
             }
-            return Integer.compare(nums[a], nums[b]);
+
+            return Integer.compare(a.number, b.number);
         });
 
-        int[] targetPos = new int[n];
-        for (int pos = 0; pos < n; pos++) {
-            targetPos[indices[pos]] = pos;
-        }
+        int[] pos = new int[n];
 
-        boolean[] visited = new boolean[n];
-        int cycles = 0;
         for (int i = 0; i < n; i++) {
-            if (!visited[i]) {
-                cycles++;
-                int j = i;
-                while (!visited[j]) {
-                    visited[j] = true;
-                    j = targetPos[j];
-                }
-            }
+            pos[arr[i].originalIndex] = i;
         }
 
-        return n - cycles;
+        int swaps = 0;
+
+        for (int i = 0; i < n; i++) {
+            if (arr[i].originalIndex == i) {
+                continue;
+            }
+
+            int correctPosition = pos[i];
+            Element temp = arr[i];
+            arr[i] = arr[correctPosition];
+            arr[correctPosition] = temp;
+
+            pos[arr[correctPosition].originalIndex] = correctPosition;
+            pos[arr[i].originalIndex] = i;
+
+            swaps++;
+        }
+
+        return swaps;
     }
 }
