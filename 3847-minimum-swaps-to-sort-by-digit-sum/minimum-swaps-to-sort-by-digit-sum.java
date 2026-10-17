@@ -1,41 +1,45 @@
 class Solution {
     public int minSwaps(int[] nums) {
         int n = nums.length;
-        int[][] arr = new int[n][2];
+        int[] digitSum = new int[n];
         for (int i = 0; i < n; i++) {
-            arr[i][0] = f(nums[i]);
-            arr[i][1] = nums[i];
+            int x = nums[i], sum = 0;
+            while (x > 0) {
+                sum += x % 10;
+                x /= 10;
+            }
+            digitSum[i] = sum;
         }
-        Arrays.sort(arr, (a, b) -> {
-            if (a[0] != b[0])
-                return Integer.compare(a[0], b[0]);
-            return Integer.compare(a[1], b[1]);
+
+        Integer[] indices = new Integer[n];
+        for (int i = 0; i < n; i++) {
+            indices[i] = i;
+        }
+        Arrays.sort(indices, (a, b) -> {
+            if (digitSum[a] != digitSum[b]) {
+                return Integer.compare(digitSum[a], digitSum[b]);
+            }
+            return Integer.compare(nums[a], nums[b]);
         });
-        Map<Integer, Integer> d = new HashMap<>();
-        for (int i = 0; i < n; i++) {
-            d.put(arr[i][1], i);
+
+        int[] targetPos = new int[n];
+        for (int pos = 0; pos < n; pos++) {
+            targetPos[indices[pos]] = pos;
         }
-        boolean[] vis = new boolean[n];
-        int ans = n;
+
+        boolean[] visited = new boolean[n];
+        int cycles = 0;
         for (int i = 0; i < n; i++) {
-            if (!vis[i]) {
-                ans--;
+            if (!visited[i]) {
+                cycles++;
                 int j = i;
-                while (!vis[j]) {
-                    vis[j] = true;
-                    j = d.get(nums[j]);
+                while (!visited[j]) {
+                    visited[j] = true;
+                    j = targetPos[j];
                 }
             }
         }
-        return ans;
-    }
 
-    private int f(int x) {
-        int s = 0;
-        while (x != 0) {
-            s += x % 10;
-            x /= 10;
-        }
-        return s;
+        return n - cycles;
     }
 }
