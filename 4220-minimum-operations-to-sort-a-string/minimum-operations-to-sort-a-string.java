@@ -1,30 +1,41 @@
 class Solution {
     public int minOperations(String s) {
-        boolean isSorted = true;
-        char[] cs = s.toCharArray();
-        int n = cs.length;
-        char mn = cs[0], mx = cs[0];
-        for (int i = 1; i < n; ++i) {
-            mn = (char) Math.min(mn, cs[i]);
-            mx = (char) Math.max(mx, cs[i]);
-            if (cs[i] < cs[i - 1]) {
-                isSorted = false;
+        int n = s.length();
+        boolean sorted = true;
+
+        for (int i = 1; i < n; i++) {
+            if (s.charAt(i) < s.charAt(i - 1)) {
+                sorted = false;
+                break;
             }
         }
-        if (isSorted) {
+
+        if (sorted) {
             return 0;
         }
+
         if (n == 2) {
             return -1;
         }
-        if (cs[0] == mn || cs[n - 1] == mx) {
+
+        char min = 'z';
+        char max = 'a';
+
+        for (char c : s.toCharArray()) {
+            min = (char) Math.min(min, c);
+            max = (char) Math.max(max, c);
+        }
+
+        if (s.charAt(0) == min || s.charAt(n - 1) == max) {
             return 1;
         }
-        for (int i = 1; i < n - 1; ++i) {
-            if (cs[i] == mn || cs[i] == mx) {
+
+        for (int i = 1; i < n - 1; i++) {
+            if (s.charAt(i) == min || s.charAt(i) == max) {
                 return 2;
             }
         }
+
         return 3;
     }
 }
