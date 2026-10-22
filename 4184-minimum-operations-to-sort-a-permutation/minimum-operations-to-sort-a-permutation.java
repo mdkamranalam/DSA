@@ -1,36 +1,41 @@
 class Solution {
     public int minOperations(int[] nums) {
         int n = nums.length;
-        int zero = 0;
+        int idx = -1;
+
         for (int i = 0; i < n; i++) {
             if (nums[i] == 0) {
-                zero = i;
+                idx = i;
                 break;
             }
         }
 
-        int finalZero = zero;
-        IntPredicate check = step -> {
-            for (int i = 1; i < n; i++) {
-                int prev = (finalZero + (i - 1) * step + n) % n;
-                int curr = (finalZero + i * step + n) % n;
+        boolean isInc = true;
+        boolean isDec = true;
 
-                if (nums[prev] > nums[curr]) {
-                    return false;
-                }
-            }
-            return true;
-        };
+        for (int i = 0; i < n; i++) {
+            int curr = nums[(idx + i) % n];
+            int increase = i;
+            int decrease = (n - i) % n;
 
-        int ans = Integer.MAX_VALUE;
-        if (check.test(1)) {
-            ans = Math.min(ans, zero);
-            ans = Math.min(ans, n - zero + 2);
+            if (curr != increase)
+                isInc = false;
+            if (curr != decrease)
+                isDec = false;
         }
-        if (check.test(-1)) {
-            ans = Math.min(ans, zero + 2);
-            ans = Math.min(ans, n - zero);
+
+        int minOp = Integer.MAX_VALUE;
+        if (isInc) {
+            int optA = idx;
+            int optB = n - idx + 2;
+            minOp = Math.min(optA, optB);
         }
-        return ans == Integer.MAX_VALUE ? -1 : ans;
+
+        if (isDec) {
+            int optA = idx + 2;
+            int optB = n - idx;
+            minOp = Math.min(minOp, Math.min(optA, optB));
+        }
+        return minOp == Integer.MAX_VALUE ? -1 : minOp;
     }
 }
