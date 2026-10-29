@@ -1,424 +1,142 @@
 class Solution {
-    private List<Integer>[] graph;
+    private static final int LOG = 17;
 
-    private int[] parent;
-    private int[] depth;
-    private int[] size;
-    private int[] heavy;
-
-    private int[] head;
-    private int[] pos;
-    private int[] nodeAtPos;
-
-    private int currentPos;
-
-    private SegmentTree segmentTree;
-
-    private char[] values;
-
-    public List<Boolean> palindromePath(
-            int n,
-            int[][] edges,
-            String s,
-            String[] queries) {
-
-        /*
-         * Build adjacency list
-         */
-        graph = new ArrayList[n];
-
-        for (int i = 0; i < n; i++) {
+    public List<Boolean> palindromePath(int n, int[][] edges, String s, String[] queries) {
+        List<Integer>[] graph = new ArrayList[n];
+        for (int i = 0; i < n; i++)
             graph[i] = new ArrayList<>();
+        for (int[] e : edges) {
+            graph[e[0]].add(e[1]);
+            graph[e[1]].add(e[0]);
         }
 
-        for (int[] edge : edges) {
-            int u = edge[0];
-            int v = edge[1];
+        int[][] parent = new int[LOG][n];
+        for (int[] row : parent)
+            Arrays.fill(row, -1);
 
-            graph[u].add(v);
-            graph[v].add(u);
+        int[] depth = new int[n];
+        int[] tin = new int[n];
+        int[] tout = new int[n];
+        int[] timer = { 0 };
+
+        dfs(0, -1, graph, parent, depth, tin, tout, timer);
+
+        for (int k = 1; k < LOG; k++) {
+            for (int i = 0; i < n; i++) {
+                int p = parent[k - 1][i];
+                if (p != -1)
+                    parent[k][i] = parent[k - 1][p];
+            }
         }
 
-        values = s.toCharArray();
+        Fenwick fenwick = new Fenwick(n);
 
-        /*
-         * Step 1:
-         * Calculate parent, depth, subtree size
-         * and heavy child for every node.
-         */
-        parent = new int[n];
-        depth = new int[n];
-        size = new int[n];
-        heavy = new int[n];
-
-        Arrays.fill(parent, -1);
-        Arrays.fill(heavy, -1);
-
-        dfs(0, -1);
-
-        /*
-         * Step 2:
-         * Heavy-Light Decomposition.
-         */
-        head = new int[n];
-        pos = new int[n];
-        nodeAtPos = new int[n];
-
-        currentPos = 0;
-
-        decompose(0, 0);
-
-        /*
-         * Step 3:
-         * Create the array corresponding to HLD order.
-         */
-        int[] baseArray = new int[n];
-
-        for (int node = 0; node < n; node++) {
-            baseArray[pos[node]] = charMask(values[node]);
+        char[] labels = s.toCharArray();
+        for (int i = 0; i < n; i++) {
+            int m = mask(labels[i]);
+            fenwick.add(tin[i], m);
+            fenwick.add(tout[i] + 1, m);
         }
 
-        /*
-         * Step 4:
-         * Segment tree for XOR.
-         */
-        segmentTree = new SegmentTree(baseArray);
+        List<Boolean> ans = new ArrayList<>();
 
-        /*
-         * Step 5:
-         * Process queries.
-         */
-        List<Boolean> answer = new ArrayList<>();
+        for (String q : queries) {
+            String[] p = q.split(" ");
 
-        for (String query : queries) {
+            if (p[0].equals("update")) {
+                int u = Integer.parseInt(p[1]);
+                char c = p[2].charAt(0);
 
-            String[] parts = query.split(" ");
+                int delta = mask(labels[u]) ^ mask(c);
+                labels[u] = c;
 
-            if (parts[0].equals("update")) {
-
-                int node = Integer.parseInt(parts[1]);
-                char newChar = parts[2].charAt(0);
-
-                values[node] = newChar;
-
-                /*
-                 * Update this node's position in
-                 * the segment tree.
-                 */
-                segmentTree.update(
-                        pos[node],
-                        charMask(newChar)
-                );
+                fenwick.add(tin[u], delta);
+                fenwick.add(tout[u] + 1, delta);
 
             } else {
+                int u = Integer.parseInt(p[1]);
+                int v = Integer.parseInt(p[2]);
+                int w = lca(u, v, parent, depth);
 
-                int u = Integer.parseInt(parts[1]);
-                int v = Integer.parseInt(parts[2]);
-
-                int mask = queryPath(u, v);
-
-                /*
-                 * A string can be rearranged into a palindrome
-                 * iff at most one character has odd frequency.
-                 *
-                 * Therefore at most one bit can be set.
-                 */
-                boolean possible = (mask & (mask - 1)) == 0;
-
-                answer.add(possible);
+                int m = fenwick.sum(tin[u]) ^ fenwick.sum(tin[v]) ^ mask(labels[w]);
+                ans.add(m == 0 || (m & (m - 1)) == 0);
             }
         }
 
-        return answer;
+        return ans;
     }
 
-    /*
-     * DFS to calculate:
-     *
-     * parent[node]
-     * depth[node]
-     * size[node]
-     * heavy[node]
-     *
-     * heavy[node] = child having the largest subtree.
-     */
-    private void dfs(int node, int par) {
+    private void dfs(int u, int p,
+            List<Integer>[] g,
+            int[][] parent,
+            int[] depth,
+            int[] tin,
+            int[] tout,
+            int[] timer) {
 
-        parent[node] = par;
-        size[node] = 1;
+        tin[u] = timer[0]++;
+        parent[0][u] = p;
 
-        int maxSubtreeSize = 0;
-
-        for (int next : graph[node]) {
-
-            if (next == par) {
+        for (int v : g[u]) {
+            if (v == p)
                 continue;
-            }
-
-            depth[next] = depth[node] + 1;
-
-            dfs(next, node);
-
-            size[node] += size[next];
-
-            if (size[next] > maxSubtreeSize) {
-                maxSubtreeSize = size[next];
-                heavy[node] = next;
-            }
+            depth[v] = depth[u] + 1;
+            dfs(v, u, g, parent, depth, tin, tout, timer);
         }
+
+        tout[u] = timer[0] - 1;
     }
 
-    /*
-     * HLD decomposition.
-     *
-     * Nodes belonging to the same heavy chain
-     * receive consecutive positions.
-     */
-    private void decompose(int node, int chainHead) {
+    // ---------- LCA ----------
+    private int lca(int u, int v, int[][] parent, int[] depth) {
 
-        head[node] = chainHead;
-        pos[node] = currentPos;
-        nodeAtPos[currentPos] = node;
-
-        currentPos++;
-
-        /*
-         * First process the heavy child.
-         * This keeps the heavy chain contiguous.
-         */
-        if (heavy[node] != -1) {
-            decompose(heavy[node], chainHead);
-        }
-
-        /*
-         * Then process light children.
-         */
-        for (int next : graph[node]) {
-
-            if (next == parent[node] || next == heavy[node]) {
-                continue;
-            }
-
-            decompose(next, next);
-        }
-    }
-
-    /*
-     * Returns XOR of character masks along
-     * the path from u to v.
-     */
-    private int queryPath(int u, int v) {
-
-        int result = 0;
-
-        while (head[u] != head[v]) {
-
-            /*
-             * Make u belong to the deeper chain.
-             */
-            if (depth[head[u]] < depth[head[v]]) {
-                int temp = u;
-                u = v;
-                v = temp;
-            }
-
-            /*
-             * Query from the chain head to u.
-             */
-            result ^= segmentTree.query(
-                    pos[head[u]],
-                    pos[u]
-            );
-
-            /*
-             * Move u to the parent of its chain head.
-             */
-            u = parent[head[u]];
-        }
-
-        /*
-         * Now u and v are in the same heavy chain.
-         */
-        if (depth[u] > depth[v]) {
-            int temp = u;
+        if (depth[u] < depth[v]) {
+            int t = u;
             u = v;
-            v = temp;
+            v = t;
         }
 
-        /*
-         * Query from u to v.
-         */
-        result ^= segmentTree.query(
-                pos[u],
-                pos[v]
-        );
+        int d = depth[u] - depth[v];
+        for (int k = 0; k < LOG; k++)
+            if ((d & (1 << k)) != 0)
+                u = parent[k][u];
 
-        return result;
+        if (u == v)
+            return u;
+
+        for (int k = LOG - 1; k >= 0; k--) {
+            if (parent[k][u] != parent[k][v]) {
+                u = parent[k][u];
+                v = parent[k][v];
+            }
+        }
+
+        return parent[0][u];
     }
 
-    /*
-     * Convert a character into a 26-bit mask.
-     *
-     * a -> 000...001
-     * b -> 000...010
-     * c -> 000...100
-     * ...
-     */
-    private int charMask(char c) {
+    private int mask(char c) {
         return 1 << (c - 'a');
     }
 
-    /*
-     * Segment Tree
-     *
-     * Each node stores XOR of character masks
-     * in its range.
-     */
-    static class SegmentTree {
+    static class Fenwick {
+        int n;
+        int[] bit;
 
-        private int[] tree;
-        private int n;
-
-        SegmentTree(int[] arr) {
-
-            n = arr.length;
-
-            tree = new int[4 * n];
-
-            build(1, 0, n - 1, arr);
+        Fenwick(int n) {
+            this.n = n;
+            bit = new int[n + 1];
         }
 
-        private void build(
-                int node,
-                int left,
-                int right,
-                int[] arr) {
-
-            if (left == right) {
-                tree[node] = arr[left];
-                return;
-            }
-
-            int mid = left + (right - left) / 2;
-
-            build(
-                    node * 2,
-                    left,
-                    mid,
-                    arr
-            );
-
-            build(
-                    node * 2 + 1,
-                    mid + 1,
-                    right,
-                    arr
-            );
-
-            tree[node] =
-                    tree[node * 2] ^
-                    tree[node * 2 + 1];
+        void add(int i, int val) {
+            for (i++; i <= n; i += i & -i)
+                bit[i] ^= val;
         }
 
-        void update(int index, int value) {
-
-            update(
-                    1,
-                    0,
-                    n - 1,
-                    index,
-                    value
-            );
-        }
-
-        private void update(
-                int node,
-                int left,
-                int right,
-                int index,
-                int value) {
-
-            if (left == right) {
-                tree[node] = value;
-                return;
-            }
-
-            int mid = left + (right - left) / 2;
-
-            if (index <= mid) {
-                update(
-                        node * 2,
-                        left,
-                        mid,
-                        index,
-                        value
-                );
-            } else {
-                update(
-                        node * 2 + 1,
-                        mid + 1,
-                        right,
-                        index,
-                        value
-                );
-            }
-
-            tree[node] =
-                    tree[node * 2] ^
-                    tree[node * 2 + 1];
-        }
-
-        int query(int queryLeft, int queryRight) {
-
-            return query(
-                    1,
-                    0,
-                    n - 1,
-                    queryLeft,
-                    queryRight
-            );
-        }
-
-        private int query(
-                int node,
-                int left,
-                int right,
-                int queryLeft,
-                int queryRight) {
-
-            /*
-             * Completely outside.
-             */
-            if (queryRight < left || right < queryLeft) {
-                return 0;
-            }
-
-            /*
-             * Completely inside.
-             */
-            if (queryLeft <= left && right <= queryRight) {
-                return tree[node];
-            }
-
-            int mid = left + (right - left) / 2;
-
-            int leftResult = query(
-                    node * 2,
-                    left,
-                    mid,
-                    queryLeft,
-                    queryRight
-            );
-
-            int rightResult = query(
-                    node * 2 + 1,
-                    mid + 1,
-                    right,
-                    queryLeft,
-                    queryRight
-            );
-
-            return leftResult ^ rightResult;
+        int sum(int i) {
+            int r = 0;
+            for (i++; i > 0; i -= i & -i)
+                r ^= bit[i];
+            return r;
         }
     }
 }
