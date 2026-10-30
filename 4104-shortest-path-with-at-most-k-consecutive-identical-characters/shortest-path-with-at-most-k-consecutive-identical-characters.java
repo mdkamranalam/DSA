@@ -1,61 +1,64 @@
 class Solution {
+    public class State {
+        int u;
+        int cst;
+        int d;
+
+        public State(int u, int cst, int d) {
+            this.u = u;
+            this.cst = cst;
+            this.d = d;
+        }
+    }
+
     public int shortestPath(int n, int[][] edges, String labels, int k) {
-        List<List<int[]>> adj = new ArrayList<>();
-
+        int INF = Integer.MAX_VALUE;
+        ArrayList<int[]> graph[] = new ArrayList[n];
         for (int i = 0; i < n; i++) {
-            adj.add(new ArrayList<>());
+            graph[i] = new ArrayList<>();
         }
-
-        for (int[] e : edges) {
-            adj.get(e[0]).add(new int[] { e[1], e[2] });
+        for (int[] edge : edges) {
+            graph[edge[0]].add(new int[] { edge[1], edge[2] });
         }
-
-        int[][] cost = new int[n][k + 1];
-
-        for (int[] row : cost) {
-            Arrays.fill(row, Integer.MAX_VALUE);
+        int dist[][] = new int[n][k + 1];
+        for (int i = 0; i < n; i++) {
+            Arrays.fill(dist[i], INF);
         }
+        dist[0][1] = 0;
+        PriorityQueue<State> pq = new PriorityQueue<>((a, b) -> Integer.compare(a.cst, b.cst));
+        pq.add(new State(0, 0, 1));
 
-        PriorityQueue<int[]> q = new PriorityQueue<>((a, b) -> Integer.compare(a[2], b[2]));
-        q.add(new int[] { 0, 1, 0 });
-        cost[0][1] = 0;
+        while (!pq.isEmpty()) {
+            State curr = pq.remove();
+            int u = curr.u;
+            int cst = curr.cst;
+            int d = curr.d;
 
-        while (!q.isEmpty()) {
-            int[] curr = q.poll();
-            int node = curr[0];
-            int cons = curr[1];
-            int wt = curr[2];
-
-            if (wt > cost[node][cons]) {
+            if (cst > dist[u][d])
                 continue;
-            }
+            if (u == n - 1)
+                return (int) cst;
 
-            if (node == n - 1) {
-                return wt;
-            }
-
-            char ch1 = labels.charAt(node);
-
-            for (int[] nei : adj.get(node)) {
-                int neiNode = nei[0];
-                int neiWt = nei[1];
-
-                char ch2 = labels.charAt(neiNode);
-
-                if (ch1 == ch2 && cons == k) {
+            for (int neigh[] : graph[u]) {
+                int v = neigh[0];
+                int w = neigh[1];
+                int newd = (labels.charAt(u) == labels.charAt(v)) ? d + 1 : 1;
+                if (newd > k)
                     continue;
-                }
 
-                int newCons = (ch1 == ch2) ? cons + 1 : 1;
-                int newWt = wt + neiWt;
-
-                if (newWt < cost[neiNode][newCons]) {
-                    cost[neiNode][newCons] = newWt;
-                    q.add(new int[] { neiNode, newCons, newWt });
+                if (cst + w < dist[v][newd]) {
+                    dist[v][newd] = cst + w;
+                    pq.add(new State(v, cst + w, newd));
                 }
             }
         }
 
-        return -1;
+        int ans = INF;
+        for (int i = 0; i <= k; i++) {
+            ans = Math.min(ans, dist[n - 1][i]);
+        }
+
+        return ans == INF ? -1 : ans;
+
     }
 }
