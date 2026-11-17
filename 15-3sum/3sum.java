@@ -26,3 +26,6 @@ class Solution {
         return result;
     }
 }
+
+// Time Complexity: O(n^2)
+// Space Complexity: O(logn)
