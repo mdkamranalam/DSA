@@ -26,3 +26,6 @@ class ProductOfNumbers {
  * obj.add(num);
  * int param_2 = obj.getProduct(k);
  */
+
+ // Time Complexity: O(1)
+ // Space Complexity: O(n)
