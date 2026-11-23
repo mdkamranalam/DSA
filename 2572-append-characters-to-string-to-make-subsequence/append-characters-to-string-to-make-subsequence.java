@@ -13,3 +13,6 @@ class Solution {
         return t.length() - j;
     }
 }
+
+// Time Complexity: O(m + n)
+// Space Complexity: O(1)
