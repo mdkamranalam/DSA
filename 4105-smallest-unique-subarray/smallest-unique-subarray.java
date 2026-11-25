@@ -1,6 +1,3 @@
-import java.util.HashMap;
-import java.util.Map;
-
 class Solution {
     private static final long MOD1 = 1_000_000_007L;
     private static final long MOD2 = 1_000_000_009L;
@@ -63,3 +60,6 @@ class Solution {
         return false;
     }
 }
+
+// Time complexity: O(n log n)
+// Space complexity: O(n)
