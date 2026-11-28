@@ -59,3 +59,6 @@ class Solution {
         return (int) totalItems;
     }
 }
+
+// Time Complexity: O(n logn)
+// Space Complexity: O(n)
